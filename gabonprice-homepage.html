@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GabonPrice - Accueil</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+        --green: #157347;
+        --green-bright: #16A34A;
+        --green-soft: #ECFDF5;
+        --blue: #1E3A8A;
+        --gold: #FCD34D;
+        --ink: #111827;
+        --muted: #6B7280;
+        --line: #E5E7EB;
+        --bg: #F4F6F5;
+        --card: #FFFFFF;
+    }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #d8d8d8;
+        min-height: 100vh;
+        display: flex; align-items: flex-start; justify-content: center;
+        padding: 20px;
+    }
+    .phone {
+        width: 100%; max-width: 430px; background: var(--bg);
+        border-radius: 34px; overflow: hidden; position: relative;
+        box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+        min-height: 900px; padding-bottom: 90px;
+    }
+
+    /* HEADER */
+    .header {
+        background: var(--card); padding: 18px 18px 14px;
+        border-bottom: 1px solid var(--line);
+        position: sticky; top: 0; z-index: 50;
+    }
+    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand-logo {
+        width: 34px; height: 34px; border-radius: 8px;
+        background: conic-gradient(from 45deg, var(--gold) 0deg 90deg, var(--green-bright) 90deg 180deg, var(--blue) 180deg 270deg, #3B82F6 270deg 360deg);
+        flex-shrink: 0;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C7 2 3 5 3 9c0 3 2 5 4 7l5 6 5-6c2-2 4-4 4-7 0-4-4-7-9-7z'/%3E%3C/svg%3E") center/contain no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C7 2 3 5 3 9c0 3 2 5 4 7l5 6 5-6c2-2 4-4 4-7 0-4-4-7-9-7z'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+    .brand-name { font-size: 20px; font-weight: 800; color: var(--blue); letter-spacing: -0.5px; }
+    .brand-name span { color: var(--green-bright); }
+    .province-pill {
+        display: flex; align-items: center; gap: 6px;
+        background: var(--green-soft); color: var(--green);
+        padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 700;
+        border: none; cursor: pointer;
+    }
+    .province-pill svg { width: 14px; height: 14px; }
+
+    /* SEARCH */
+    .search {
+        display: flex; align-items: center; gap: 10px;
+        background: var(--bg); border: 1.5px solid var(--line);
+        border-radius: 14px; padding: 12px 14px;
+    }
+    .search svg { width: 20px; height: 20px; color: var(--muted); flex-shrink: 0; }
+    .search input {
+        border: none; background: transparent; flex: 1; font-size: 15px; color: var(--ink);
+    }
+    .search input:focus { outline: none; }
+    .search input::placeholder { color: #9CA3AF; }
+
+    /* SECTION */
+    .section { padding: 22px 18px 0; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .section-title { font-size: 17px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 7px; }
+    .section-title .dot { font-size: 18px; }
+    .see-all { font-size: 13px; font-weight: 700; color: var(--green-bright); text-decoration: none; }
+
+    /* TRENDING horizontal scroll */
+    .trend-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; margin: 0 -18px; padding-left: 18px; padding-right: 18px; scrollbar-width: none; }
+    .trend-scroll::-webkit-scrollbar { display: none; }
+    .trend-card {
+        min-width: 165px; background: var(--card); border-radius: 18px;
+        padding: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); flex-shrink: 0;
+        border: 1px solid var(--line);
+    }
+    .trend-emoji {
+        width: 46px; height: 46px; border-radius: 12px; background: var(--green-soft);
+        display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 10px;
+    }
+    .trend-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 3px; line-height: 1.25; }
+    .trend-sub { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+    .trend-price-row { display: flex; align-items: baseline; justify-content: space-between; }
+    .trend-price { font-size: 18px; font-weight: 800; color: var(--green); }
+    .trend-price small { font-size: 11px; font-weight: 600; color: var(--muted); }
+    .trend-badge {
+        display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700;
+        padding: 3px 7px; border-radius: 999px;
+    }
+    .badge-down { background: #DCFCE7; color: #15803D; }
+    .badge-up { background: #FEE2E2; color: #B91C1C; }
+
+    /* PROMOS */
+    .promo-card {
+        background: linear-gradient(120deg, var(--green) 0%, var(--blue) 100%);
+        border-radius: 18px; padding: 16px; color: white; display: flex; align-items: center; gap: 14px;
+        margin-bottom: 10px;
+    }
+    .promo-icon {
+        width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.18);
+        display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0;
+    }
+    .promo-body { flex: 1; }
+    .promo-title { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+    .promo-text { font-size: 12px; opacity: 0.92; line-height: 1.4; }
+    .promo-old { text-decoration: line-through; opacity: 0.7; font-size: 12px; }
+    .promo-new { font-size: 18px; font-weight: 800; }
+
+    /* CATEGORIES grid */
+    .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .cat-item {
+        background: var(--card); border-radius: 16px; padding: 14px 6px; text-align: center;
+        border: 1px solid var(--line); cursor: pointer; transition: all 0.15s;
+    }
+    .cat-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.07); }
+    .cat-emoji { font-size: 26px; display: block; margin-bottom: 6px; }
+    .cat-label { font-size: 11px; font-weight: 600; color: var(--ink); }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        background: var(--card); border-top: 1px solid var(--line);
+        display: flex; justify-content: space-around; align-items: center;
+        padding: 10px 6px 14px; z-index: 60;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; background: none; border: none; }
+    .nav-item svg { width: 23px; height: 23px; }
+    .nav-item.active { color: var(--green-bright); }
+    .nav-fab {
+        width: 54px; height: 54px; border-radius: 50%; background: var(--green);
+        display: flex; align-items: center; justify-content: center; color: white;
+        box-shadow: 0 8px 20px rgba(21,115,71,0.4); margin-top: -26px; border: 4px solid var(--card); cursor: pointer;
+    }
+    .nav-fab svg { width: 26px; height: 26px; }
+
+    @media (max-width: 430px) {
+        body { padding: 0; background: white; }
+        .phone { border-radius: 0; box-shadow: none; min-height: 100vh; }
+    }
+</style>
+</head>
+<body>
+<div class="phone">
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-top">
+            <div class="brand">
+                <div class="brand-logo"></div>
+                <div class="brand-name">Gabon<span>Price</span></div>
+            </div>
+            <button class="province-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                Libreville
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+        </div>
+        <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Rechercher un produit, un magasin...">
+        </div>
+    </div>
+
+    <!-- TENDANCES -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-title"><span class="dot">🔥</span> Tendances du jour</div>
+            <a class="see-all" href="#">Tout voir</a>
+        </div>
+        <div class="trend-scroll">
+            <div class="trend-card">
+                <div class="trend-emoji">🍚</div>
+                <div class="trend-name">Riz parfumé 5kg</div>
+                <div class="trend-sub">Mbolo · il y a 2h</div>
+                <div class="trend-price-row">
+                    <div class="trend-price">4 500 <small>FCFA</small></div>
+                    <span class="trend-badge badge-down">▼ 8%</span>
+                </div>
+            </div>
+            <div class="trend-card">
+                <div class="trend-emoji">🔥</div>
+                <div class="trend-name">Gaz 12,5 kg</div>
+                <div class="trend-sub">Cecado · il y a 5h</div>
+                <div class="trend-price-row">
+                    <div class="trend-price">6 800 <small>FCFA</small></div>
+                    <span class="trend-badge badge-up">▲ 4%</span>
+                </div>
+            </div>
+            <div class="trend-card">
+                <div class="trend-emoji">🐔</div>
+                <div class="trend-name">Poulet entier</div>
+                <div class="trend-sub">Géant CKdo · 1h</div>
+                <div class="trend-price-row">
+                    <div class="trend-price">3 900 <small>FCFA</small></div>
+                    <span class="trend-badge badge-down">▼ 5%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROMOS -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-title"><span class="dot">🏷️</span> Promos détectées</div>
+        </div>
+        <div class="promo-card">
+            <div class="promo-icon">🛢️</div>
+            <div class="promo-body">
+                <div class="promo-title">Huile végétale 1L</div>
+                <div class="promo-text">Baisse repérée à <b>Prix Import</b>, Akanda</div>
+            </div>
+            <div style="text-align:right">
+                <div class="promo-old">1 700 FCFA</div>
+                <div class="promo-new">1 250 FCFA</div>
+            </div>
+        </div>
+        <div class="promo-card" style="background: linear-gradient(120deg, #B45309 0%, #157347 100%);">
+            <div class="promo-icon">🧱</div>
+            <div class="promo-body">
+                <div class="promo-title">Sac de ciment 50kg</div>
+                <div class="promo-text">Meilleur prix ce mois à <b>Score</b>, Owendo</div>
+            </div>
+            <div style="text-align:right">
+                <div class="promo-old">7 200 FCFA</div>
+                <div class="promo-new">6 100 FCFA</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-title"><span class="dot">🗂️</span> Catégories</div>
+        </div>
+        <div class="cat-grid">
+            <div class="cat-item"><span class="cat-emoji">🥖</span><span class="cat-label">Alimentaire</span></div>
+            <div class="cat-item"><span class="cat-emoji">🔥</span><span class="cat-label">Gaz &amp; Énergie</span></div>
+            <div class="cat-item"><span class="cat-emoji">🧱</span><span class="cat-label">Construction</span></div>
+            <div class="cat-item"><span class="cat-emoji">🧴</span><span class="cat-label">Hygiène</span></div>
+            <div class="cat-item"><span class="cat-emoji">📱</span><span class="cat-label">Électronique</span></div>
+            <div class="cat-item"><span class="cat-emoji">💊</span><span class="cat-label">Pharmacie</span></div>
+            <div class="cat-item"><span class="cat-emoji">👕</span><span class="cat-label">Vêtements</span></div>
+            <div class="cat-item"><span class="cat-emoji">⛽</span><span class="cat-label">Carburant</span></div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+        <button class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            Accueil
+        </button>
+        <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Chercher
+        </button>
+        <button class="nav-fab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H1l3-3m0 6l-3-3"></path><rect x="9" y="3" width="12" height="18" rx="2"></rect></svg>
+            Historique
+        </button>
+        <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Profil
+        </button>
+    </div>
+</div>
+</body>
+</html>

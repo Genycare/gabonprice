@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-green: #157347;
+  --color-brand-green-vivid: #16a34a;
+  --color-brand-green-light: #ecfdf5;
+  --color-brand-blue: #1e3a8a;
+  --color-brand-blue-dark: #1e40af;
+  --color-brand-gold: #fcd34d;
+  --color-ink: #111827;
+  --color-muted: #6b7280;
+  --color-line: #e5e7eb;
+  --color-app-bg: #f4f6f5;
+
+  --radius-card: 16px;
+  --radius-card-lg: 22px;
+
+  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-app-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-green-vivid);
+  outline-offset: 2px;
+}

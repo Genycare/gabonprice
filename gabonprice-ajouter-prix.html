@@ -1,0 +1,139 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>GabonPrice - Ajouter un prix</title>
+<style>
+    :root {
+        --green: #157347; --green-bright: #16A34A; --green-soft: #ECFDF5;
+        --blue: #1E3A8A; --gold: #FCD34D; --ink: #111827; --muted: #6B7280;
+        --line: #E5E7EB; --bg: #F4F6F5; --card: #FFFFFF;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background:#d8d8d8; min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:20px; }
+    .phone { width:100%; max-width:430px; background:var(--bg); border-radius:34px; overflow:hidden;
+        position:relative; box-shadow:0 25px 70px rgba(0,0,0,0.3); min-height:900px; padding-bottom:100px; }
+    .topbar { background:var(--card); padding:16px 18px; border-bottom:1px solid var(--line);
+        position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px; }
+    .back-btn { width:38px; height:38px; border-radius:10px; background:var(--bg); border:1px solid var(--line);
+        display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+    .back-btn svg { width:20px; height:20px; color:var(--ink); }
+    .topbar-title { font-size:17px; font-weight:800; color:var(--ink); flex:1; }
+    @media (max-width:430px){ body{padding:0;background:white;} .phone{border-radius:0;box-shadow:none;min-height:100vh;} }
+
+    .form { padding:20px 18px; display:flex; flex-direction:column; gap:20px; }
+    .field { }
+    .field-label { font-size:13px; font-weight:700; color:var(--ink); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+    .field-label .req { color:var(--green-bright); }
+    .field-label .opt { color:var(--muted); font-weight:600; font-size:11px; }
+    .input, .select {
+        width:100%; padding:14px 16px; border:1.5px solid var(--line); border-radius:14px;
+        font-size:15px; color:var(--ink); background:var(--card); font-family:inherit;
+    }
+    .input:focus, .select:focus { outline:none; border-color:var(--green-bright); box-shadow:0 0 0 4px rgba(22,163,74,0.1); }
+    .input::placeholder { color:#9CA3AF; }
+    /* product picker */
+    .product-picker { display:flex; align-items:center; gap:14px; background:var(--card); border:1.5px solid var(--line); border-radius:14px; padding:12px 16px; }
+    .pp-emoji { width:46px; height:46px; border-radius:12px; background:var(--green-soft); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+    .pp-info { flex:1; }
+    .pp-name { font-size:15px; font-weight:700; color:var(--ink); }
+    .pp-cat { font-size:12px; color:var(--muted); }
+    .pp-change { font-size:12px; font-weight:700; color:var(--green-bright); background:none; border:none; cursor:pointer; }
+    /* price input with currency */
+    .price-wrap { position:relative; }
+    .price-wrap .currency { position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:15px; font-weight:700; color:var(--muted); }
+    .price-input { font-size:22px; font-weight:800; color:var(--green); padding-right:60px; }
+    /* location */
+    .geo-btn { width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:14px;
+        background:var(--green-soft); color:var(--green); border:1.5px dashed var(--green-bright); border-radius:14px;
+        font-size:14px; font-weight:700; cursor:pointer; margin-bottom:12px; }
+    .geo-btn svg { width:18px; height:18px; }
+    .geo-detected { display:flex; align-items:center; gap:10px; background:#DCFCE7; border:1px solid #86EFAC; border-radius:12px; padding:11px 14px; margin-bottom:12px; }
+    .geo-detected svg { width:18px; height:18px; color:var(--green); flex-shrink:0; }
+    .geo-detected-text { font-size:13px; color:#15803D; font-weight:600; flex:1; }
+    .geo-detected .edit { font-size:12px; color:var(--green); font-weight:700; background:none; border:none; cursor:pointer; }
+    .divider-or { text-align:center; font-size:12px; color:var(--muted); font-weight:600; margin:4px 0 12px; position:relative; }
+    .loc-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .loc-grid .full { grid-column:1/3; }
+    /* photo */
+    .photo-drop { border:1.5px dashed var(--line); border-radius:16px; padding:26px; text-align:center; background:var(--card); cursor:pointer; }
+    .photo-drop svg { width:34px; height:34px; color:var(--green-bright); margin-bottom:10px; }
+    .photo-title { font-size:14px; font-weight:700; color:var(--ink); margin-bottom:3px; }
+    .photo-sub { font-size:12px; color:var(--muted); }
+    /* submit */
+    .submit-bar { position:absolute; bottom:0; left:0; right:0; background:var(--card); border-top:1px solid var(--line); padding:14px 18px 20px; z-index:60; }
+    .submit-btn { width:100%; padding:17px; background:var(--green); color:white; border:none; border-radius:14px; font-size:17px; font-weight:800; cursor:pointer; }
+    .submit-btn:hover { background:#0f5c38; }
+    .helper { font-size:11px; color:var(--muted); text-align:center; margin-top:8px; }
+</style></head><body>
+<div class="phone">
+    <div class="topbar">
+        <button class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        <div class="topbar-title">Ajouter un prix</div>
+    </div>
+
+    <div class="form">
+        <!-- PRODUIT -->
+        <div class="field">
+            <div class="field-label">Produit <span class="req">*</span></div>
+            <div class="product-picker">
+                <div class="pp-emoji">🍚</div>
+                <div class="pp-info">
+                    <div class="pp-name">Riz parfumé 5 kg</div>
+                    <div class="pp-cat">Alimentaire</div>
+                </div>
+                <button class="pp-change">Changer</button>
+            </div>
+        </div>
+
+        <!-- PRIX -->
+        <div class="field">
+            <div class="field-label">Prix payé <span class="req">*</span></div>
+            <div class="price-wrap">
+                <input class="input price-input" type="tel" placeholder="0" value="4 500">
+                <span class="currency">FCFA</span>
+            </div>
+        </div>
+
+        <!-- MAGASIN -->
+        <div class="field">
+            <div class="field-label">Magasin <span class="req">*</span></div>
+            <input class="input" type="text" placeholder="Ex : Mbolo, Cecado, Marché Mont-Bouët..." value="Mbolo">
+        </div>
+
+        <!-- LOCALISATION -->
+        <div class="field">
+            <div class="field-label">Localisation <span class="req">*</span></div>
+            <div class="geo-detected">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <span class="geo-detected-text">Position détectée : Libreville · Glass</span>
+                <button class="edit">Modifier</button>
+            </div>
+            <div class="divider-or">— ou saisir manuellement —</div>
+            <div class="loc-grid">
+                <select class="select"><option>Estuaire</option><option>Ogooué-Maritime</option><option>Haut-Ogooué</option><option>Moyen-Ogooué</option><option>Ngounié</option></select>
+                <select class="select"><option>Libreville</option><option>Port-Gentil</option><option>Franceville</option><option>Lambaréné</option><option>Mouila</option></select>
+                <input class="input full" type="text" placeholder="Quartier (ex : Glass, Akébé, Nombakélé)">
+            </div>
+        </div>
+
+        <!-- DATE -->
+        <div class="field">
+            <div class="field-label">Date d'achat <span class="req">*</span></div>
+            <input class="input" type="text" placeholder="jj/mm/aaaa" value="06/07/2026">
+        </div>
+
+        <!-- PHOTO -->
+        <div class="field">
+            <div class="field-label">Photo du ticket <span class="opt">(optionnel)</span></div>
+            <div class="photo-drop">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                <div class="photo-title">Ajouter une photo du ticket</div>
+                <div class="photo-sub">Renforce la confiance de la communauté</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="submit-bar">
+        <button class="submit-btn">Publier le prix</button>
+        <div class="helper">Votre prix sera visible immédiatement et vérifié par la communauté</div>
+    </div>
+</div></body></html>
