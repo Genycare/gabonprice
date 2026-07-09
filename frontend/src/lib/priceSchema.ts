@@ -8,6 +8,9 @@ export const priceFormSchema = z.object({
   city: z.string().min(1, 'Choisissez une ville.'),
   neighborhood: z.string().trim().optional(),
   purchaseDate: z.coerce.date().max(new Date(), 'La date ne peut pas être dans le futur.'),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  photoUrl: z.string().optional(),
 })
 
 export type PriceFormValues = z.input<typeof priceFormSchema>

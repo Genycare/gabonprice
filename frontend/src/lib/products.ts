@@ -79,7 +79,16 @@ export async function fetchPrice(priceId: string): Promise<Tables<'prices'>> {
 
 export type NewPrice = Pick<
   Tables<'prices'>,
-  'product_id' | 'amount' | 'store_name' | 'province' | 'city' | 'neighborhood' | 'purchase_date'
+  | 'product_id'
+  | 'amount'
+  | 'store_name'
+  | 'province'
+  | 'city'
+  | 'neighborhood'
+  | 'purchase_date'
+  | 'latitude'
+  | 'longitude'
+  | 'photo_url'
 >
 
 export async function createPrice(userId: string, price: NewPrice) {

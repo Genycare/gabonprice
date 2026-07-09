@@ -78,9 +78,13 @@ function PriceCard({
       </div>
 
       <div className="mb-3 flex items-center gap-2.5 border-y border-line py-3">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#F3F4F6] to-[#E5E7EB] text-xl">
-          🧾
-        </div>
+        {entry.photo_url ? (
+          <img src={entry.photo_url} alt="Ticket de caisse" className="h-11 w-11 flex-shrink-0 rounded-[10px] object-cover" />
+        ) : (
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#F3F4F6] to-[#E5E7EB] text-xl">
+            🧾
+          </div>
+        )}
         <div className="flex-1">
           <div className="flex items-center gap-1.5 text-sm font-bold text-ink">
             {entry.users?.username ?? 'Utilisateur'}{' '}

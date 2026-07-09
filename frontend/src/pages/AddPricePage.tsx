@@ -12,11 +12,15 @@ import {
 import { categoryEmoji } from '../lib/categories'
 import { priceFormSchema } from '../lib/priceSchema'
 import { PROVINCES, CITIES_BY_PROVINCE } from '../lib/locations'
+import { detectLocation } from '../lib/geolocation'
+import { compressImage, uploadPricePhoto } from '../lib/photo'
 import { useSession } from '../hooks/useSession'
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
 }
+
+type LocationStatus = 'detecting' | 'detected' | 'unavailable'
 
 export function AddPricePage() {
   const navigate = useNavigate()
@@ -34,6 +38,14 @@ export function AddPricePage() {
   const [city, setCity] = useState('')
   const [neighborhood, setNeighborhood] = useState('')
   const [purchaseDate, setPurchaseDate] = useState(todayIso())
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null)
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>(editPriceId ? 'unavailable' : 'detecting')
+  const [detectedLabel, setDetectedLabel] = useState<string | null>(null)
+
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -54,8 +66,36 @@ export function AddPricePage() {
       setCity(price.city)
       setNeighborhood(price.neighborhood ?? '')
       setPurchaseDate(price.purchase_date)
+      setPhotoUrl(price.photo_url)
+      if (price.latitude != null && price.longitude != null) {
+        setCoords({ latitude: price.latitude, longitude: price.longitude })
+      }
     })
   }, [editPriceId, session, navigate])
+
+  useEffect(() => {
+    if (editPriceId) return
+    let cancelled = false
+    detectLocation().then((detected) => {
+      if (cancelled) return
+      if (!detected) {
+        setLocationStatus('unavailable')
+        return
+      }
+      setCoords({ latitude: detected.latitude, longitude: detected.longitude })
+      if (detected.city && detected.province) {
+        setProvince(detected.province)
+        setCity(detected.city)
+        setDetectedLabel(`${detected.city}, ${detected.province}`)
+        setLocationStatus('detected')
+      } else {
+        setLocationStatus('unavailable')
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [editPriceId])
 
   const { data: productResults } = useQuery({
     queryKey: ['product-search', productQuery],
@@ -64,6 +104,19 @@ export function AddPricePage() {
   })
 
   const cityOptions = province ? CITIES_BY_PROVINCE[province as keyof typeof CITIES_BY_PROVINCE] : []
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
+
+  function removePhoto() {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    setPhotoUrl(null)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -90,17 +143,28 @@ export function AddPricePage() {
     setErrors({})
     setIsSubmitting(true)
 
-    const payload = {
-      product_id: parsed.data.productId,
-      amount: parsed.data.amount,
-      store_name: parsed.data.storeName,
-      province: parsed.data.province,
-      city: parsed.data.city,
-      neighborhood: parsed.data.neighborhood ?? null,
-      purchase_date: parsed.data.purchaseDate.toISOString().slice(0, 10),
-    }
-
     try {
+      let finalPhotoUrl = photoUrl
+      if (photoFile && session) {
+        setIsUploadingPhoto(true)
+        const compressed = await compressImage(photoFile)
+        finalPhotoUrl = await uploadPricePhoto(session.user.id, compressed)
+        setIsUploadingPhoto(false)
+      }
+
+      const payload = {
+        product_id: parsed.data.productId,
+        amount: parsed.data.amount,
+        store_name: parsed.data.storeName,
+        province: parsed.data.province,
+        city: parsed.data.city,
+        neighborhood: parsed.data.neighborhood ?? null,
+        purchase_date: parsed.data.purchaseDate.toISOString().slice(0, 10),
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+        photo_url: finalPhotoUrl,
+      }
+
       if (editPriceId) {
         await updatePrice(editPriceId, payload)
         navigate(`/produit/${parsed.data.productId}`)
@@ -122,8 +186,11 @@ export function AddPricePage() {
       setSubmitError("Impossible d'enregistrer le prix. Réessayez.")
     } finally {
       setIsSubmitting(false)
+      setIsUploadingPhoto(false)
     }
   }
+
+  const currentPhotoPreview = photoPreview ?? photoUrl
 
   return (
     <div className="pb-28">
@@ -229,6 +296,25 @@ export function AddPricePage() {
           <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Localisation <span className="text-brand-green-vivid">*</span>
           </div>
+
+          {locationStatus === 'detecting' && (
+            <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-line bg-app-bg px-3.5 py-2.75 text-[13px] font-semibold text-muted">
+              Détection de votre position...
+            </div>
+          )}
+          {locationStatus === 'detected' && detectedLabel && (
+            <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-[#86EFAC] bg-[#DCFCE7] px-3.5 py-2.75">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5 flex-shrink-0 text-brand-green">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span className="flex-1 text-[13px] font-semibold text-[#15803D]">Position détectée : {detectedLabel}</span>
+            </div>
+          )}
+          {locationStatus === 'unavailable' && !editPriceId && (
+            <div className="mb-3 text-center text-xs font-semibold text-muted">— Sélectionnez votre position —</div>
+          )}
+
           <div className="grid grid-cols-2 gap-2.5">
             <select
               value={province}
@@ -289,25 +375,36 @@ export function AddPricePage() {
           <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Photo du ticket <span className="text-[11px] font-semibold text-muted">(optionnel)</span>
           </div>
-          <button
-            type="button"
-            className="w-full rounded-2xl border-[1.5px] border-dashed border-line bg-white px-4 py-6.5 text-center"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mx-auto mb-2.5 h-8.5 w-8.5 text-brand-green-vivid"
-            >
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-            <div className="mb-0.5 text-sm font-bold text-ink">Ajouter une photo du ticket</div>
-            <div className="text-xs text-muted">Renforce la confiance de la communauté</div>
-          </button>
+          {currentPhotoPreview ? (
+            <div className="relative overflow-hidden rounded-2xl border-[1.5px] border-line">
+              <img src={currentPhotoPreview} alt="Ticket" className="h-40 w-full object-cover" />
+              <button
+                type="button"
+                onClick={removePhoto}
+                className="absolute right-2.5 top-2.5 rounded-full bg-black/60 px-3 py-1.5 text-xs font-bold text-white"
+              >
+                Retirer
+              </button>
+            </div>
+          ) : (
+            <label className="block w-full cursor-pointer rounded-2xl border-[1.5px] border-dashed border-line bg-white px-4 py-6.5 text-center">
+              <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mx-auto mb-2.5 h-8.5 w-8.5 text-brand-green-vivid"
+              >
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              <div className="mb-0.5 text-sm font-bold text-ink">Ajouter une photo du ticket</div>
+              <div className="text-xs text-muted">Renforce la confiance de la communauté</div>
+            </label>
+          )}
         </div>
 
         {submitError && <p className="text-sm text-red-600">{submitError}</p>}
@@ -318,7 +415,7 @@ export function AddPricePage() {
             disabled={isSubmitting}
             className="w-full rounded-2xl bg-brand-green py-4.25 text-[17px] font-extrabold text-white hover:bg-[#0f5c38] disabled:opacity-60"
           >
-            {isSubmitting ? 'Enregistrement...' : editPriceId ? 'Enregistrer les modifications' : 'Publier le prix'}
+            {isUploadingPhoto ? 'Envoi de la photo...' : isSubmitting ? 'Enregistrement...' : editPriceId ? 'Enregistrer les modifications' : 'Publier le prix'}
           </button>
           <div className="mt-2 text-center text-[11px] text-muted">
             Votre prix sera visible immédiatement et vérifié par la communauté

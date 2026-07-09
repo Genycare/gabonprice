@@ -9,3 +9,8 @@ export const CITIES_BY_PROVINCE: Record<(typeof PROVINCES)[number], string[]> = 
 }
 
 export const CITIES = Object.values(CITIES_BY_PROVINCE).flat()
+
+export function provinceForCity(city: string): string | undefined {
+  const entry = Object.entries(CITIES_BY_PROVINCE).find(([, cities]) => cities.includes(city))
+  return entry?.[0]
+}
