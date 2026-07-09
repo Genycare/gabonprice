@@ -10,7 +10,7 @@
 
 ## Phase 0 — Setup du projet
 
-- [ ] Créer le dépôt Git (mono-repo ou front/back séparés) + README
+- [x] Créer le dépôt Git (mono-repo ou front/back séparés) + README
 - [x] Initialiser le frontend : Vite + React + **TypeScript** (`frontend/`, React 19 + Vite 8 + TS strict)
 - [x] Configurer TailwindCSS avec les design tokens du cahier des charges (Tailwind v4 via `@tailwindcss/vite`, tokens dans `src/index.css`)
 - [x] Installer les libs de base : TanStack Query, Zustand, React Hook Form, Zod, React Router
@@ -23,7 +23,7 @@
 
 ## Phase 1 — Authentification (OTP)
 
-- [ ] Créer la table `users` + RLS
+- [x] Créer la table `users` + RLS (profil auto-créé via trigger sur `auth.users`, niveaux calculés automatiquement)
 - [ ] Écran de connexion : saisie du numéro `+241` avec formatage
 - [ ] Endpoint / fonction d'envoi du code OTP (intégration Infobip)
 - [ ] **Rate-limiting** sur l'envoi d'OTP (1/60s, 5/h par numéro)
@@ -36,16 +36,16 @@
 
 ## Phase 2 — Modèle de données & API
 
-- [ ] Créer les tables `products`, `prices`, `price_ratings`, `price_reports`, `price_history`
-- [ ] Index full-text (`tsvector`) sur `products`
-- [ ] RLS sur toutes les tables (lecture publique des prix `active`, écriture = propriétaire, admin = rôle)
+- [x] Créer les tables `products`, `prices`, `price_ratings`, `price_reports`, `price_history`
+- [x] Index full-text (`tsvector`) sur `products` (config `french`, trigger de maintenance auto)
+- [x] RLS sur toutes les tables (lecture publique des prix `active`, écriture = propriétaire, admin = rôle) — advisors sécurité/perf Supabase passés au propre
 - [ ] Seed de données réalistes (produits + magasins + quelques prix de test)
-- [ ] Lecture des produits (liste, recherche, filtre province/ville)
-- [ ] Lecture des prix d'un produit (triés du moins cher au plus cher)
-- [ ] Création d'un prix (validation Zod côté serveur)
-- [ ] Édition / suppression d'un prix par son propriétaire
-- [ ] Edge Function : recalcul du `median_price` + `is_median_outlier` à chaque nouveau prix
-- [ ] Edge Function : mise à jour de `price_trend_7d` et `price_history`
+- [ ] Lecture des produits (liste, recherche, filtre province/ville) — côté frontend (query TanStack)
+- [ ] Lecture des prix d'un produit (triés du moins cher au plus cher) — côté frontend
+- [ ] Création d'un prix (validation Zod côté serveur) — formulaire côté frontend (RLS déjà en place)
+- [ ] Édition / suppression d'un prix par son propriétaire — côté frontend (RLS déjà en place)
+- [x] Recalcul du `median_price` + `is_median_outlier` à chaque nouveau prix — implémenté en triggers Postgres (`recalc_product_median`, `prices_set_outlier_flag`) plutôt qu'en Edge Function : plus fiable (atomique avec l'écriture), pas de latence réseau supplémentaire
+- [x] Mise à jour de `price_trend_7d` et `price_history` — même trigger `recalc_product_median`, testé manuellement (karma, médiane, outlier, transitions `flagged`/`removed`, karma -15)
 
 ## Phase 3 — Écrans cœur
 
@@ -65,12 +65,12 @@
 
 ## Phase 4 — Communauté & modération
 
-- [ ] Votes 👍 / 👎 sur un prix (contrainte 1 vote / utilisateur / prix)
-- [ ] Transitions de statut auto : 3 votes négatifs → `flagged`, 5 → `removed`
-- [ ] Signalement d'un prix (raison + statut `pending`)
-- [ ] Calcul et attribution du karma (publier, votes reçus, prix retiré)
-- [ ] Affichage du niveau utilisateur d'après le karma
-- [ ] Marquage visuel des prix `outlier` (« prix inhabituel »)
+- [x] Votes 👍 / 👎 sur un prix (contrainte 1 vote / utilisateur / prix) — table `price_ratings` + trigger, UI à faire (Phase 3)
+- [x] Transitions de statut auto : 3 votes négatifs → `flagged`, 5 → `removed` — trigger `handle_price_rating_change`, testé (escalade flagged→removed vérifiée)
+- [ ] Signalement d'un prix (raison + statut `pending`) — table `price_reports` prête, formulaire UI à faire
+- [x] Calcul et attribution du karma (publier +10, 👍 +2, 👎 −1, prix retiré −15) — triggers Postgres, testé
+- [ ] Affichage du niveau utilisateur d'après le karma — calcul auto en base (`compute_user_level`), affichage UI à faire
+- [ ] Marquage visuel des prix `outlier` (« prix inhabituel ») — flag calculé en base (`is_median_outlier`), affichage UI à faire
 
 ## Phase 5 — Offline & PWA
 
@@ -124,4 +124,5 @@
 - **Logo** : Option 1 « étiquette du Gabon » retenue.
 - **Backend** : Chemin A (Supabase) retenu par défaut.
 - **2026-07-09** : Frontend scaffoldé avec `npm create vite@latest` (React 19 + Vite 8 + TS). Tailwind en v4 (plugin `@tailwindcss/vite`, config via `@theme` dans `index.css`, plus de `tailwind.config.js`). Lint via `oxlint` (généré par défaut par le template Vite) plutôt qu'ESLint classique — plus rapide, mêmes garanties de base ; Prettier ajouté pour le format. Manifest PWA généré par `vite-plugin-pwa` (pas de `manifest.json` statique dupliqué). Routes de base posées (`/`, `/recherche`, `/produit/:id`, `/ajouter`, `/historique`, `/profil`, `/connexion`, `/verification`) avec pages placeholder à remplacer par les maquettes.
+- **2026-07-09** : Projet Supabase `Gabon_price` (`vgczurwskvwmbyhstwku`, région eu-west-3) connecté. Schéma complet créé (6 tables, RLS sur toutes, triggers métier). Écart au cahier des charges : le recalcul de médiane/outlier/tendance et la logique karma/modération sont implémentés en **triggers Postgres** (`recalc_product_median`, `prices_set_outlier_flag`, `prices_after_insert/update/delete`, `handle_price_rating_change`) plutôt qu'en **Edge Functions Deno** — plus simple, atomique avec l'écriture (pas de risque de désynchro si l'edge function échoue après l'insert), et suffisant pour le volume attendu au MVP. Numéro de téléphone protégé : jamais exposé via l'API publique (colonnes accessibles à `anon`/`authenticated` limitées à `id, username, karma_score, level, preferred_province, created_at` par des `GRANT` colonne par colonne ; le téléphone n'est lisible que par son propriétaire via la fonction `get_my_profile()`). Rôle admin porté par `users.is_admin` (pas de table de rôles séparée, suffisant pour le MVP). Advisors sécurité/performance Supabase passés au vert (seuls des `INFO` "unused index" restent, normal sur base vide). Testé manuellement : profil auto-créé à l'inscription, karma (+10 prix, +2/-1 vote, -15 suppression), médiane/tendance/historique, détection d'outlier (>±60 %), escalade `active → flagged (3 votes nets)→ removed (5 votes nets)`. Types TypeScript générés dans `frontend/src/types/supabase.ts` et branchés sur le client (`createClient<Database>`).
 - _(ajouter les décisions au fil de l'eau)_
