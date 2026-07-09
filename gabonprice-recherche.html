@@ -1,0 +1,161 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>GabonPrice - Recherche</title>
+<style>
+    :root {
+        --green: #157347; --green-bright: #16A34A; --green-soft: #ECFDF5;
+        --blue: #1E3A8A; --gold: #FCD34D; --ink: #111827; --muted: #6B7280;
+        --line: #E5E7EB; --bg: #F4F6F5; --card: #FFFFFF;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background:#d8d8d8; min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:20px; }
+    .phone { width:100%; max-width:430px; background:var(--bg); border-radius:34px; overflow:hidden;
+        position:relative; box-shadow:0 25px 70px rgba(0,0,0,0.3); min-height:900px; padding-bottom:90px; }
+    @media (max-width:430px){ body{padding:0;background:white;} .phone{border-radius:0;box-shadow:none;min-height:100vh;} }
+
+    /* HEADER */
+    .header { background:var(--card); padding:16px 18px 14px; border-bottom:1px solid var(--line);
+        position:sticky; top:0; z-index:50; }
+    .search { display:flex; align-items:center; gap:10px; background:var(--bg); border:1.5px solid var(--green-bright);
+        border-radius:14px; padding:12px 14px; margin-bottom:12px; box-shadow:0 0 0 4px rgba(22,163,74,0.1); }
+    .search svg { width:20px; height:20px; color:var(--muted); flex-shrink:0; }
+    .search input { border:none; background:transparent; flex:1; font-size:15px; color:var(--ink); }
+    .search input:focus { outline:none; }
+    .search input::placeholder { color:#9CA3AF; }
+    .filters { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .filter-select { appearance:none; -webkit-appearance:none; background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") right 12px center/14px no-repeat;
+        border:1.5px solid var(--line); border-radius:12px; padding:10px 32px 10px 14px; font-size:13px; font-weight:600; color:var(--ink); }
+    .filter-select.active { border-color:var(--green-bright); color:var(--green); background-color:var(--green-soft); }
+
+    /* RESULTS */
+    .results-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 10px; }
+    .results-count { font-size:13px; color:var(--muted); font-weight:600; }
+    .sort-pill { font-size:12px; font-weight:700; color:var(--green); background:var(--green-soft); padding:6px 12px;
+        border-radius:999px; border:none; display:flex; align-items:center; gap:5px; }
+    .sort-pill svg { width:13px; height:13px; }
+
+    .result-list { padding:0 18px; display:flex; flex-direction:column; gap:10px; }
+    .result-card { display:flex; align-items:center; gap:12px; background:var(--card); border-radius:16px;
+        padding:12px; border:1px solid var(--line); box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+    .result-emoji { width:48px; height:48px; border-radius:12px; background:var(--green-soft); flex-shrink:0;
+        display:flex; align-items:center; justify-content:center; font-size:24px; }
+    .result-info { flex:1; min-width:0; }
+    .result-name { font-size:15px; font-weight:700; color:var(--ink); margin-bottom:2px; }
+    .result-cat { font-size:12px; color:var(--muted); }
+    .result-price-box { text-align:right; flex-shrink:0; }
+    .result-price { font-size:16px; font-weight:800; color:var(--green); }
+    .result-price small { font-size:11px; color:var(--muted); font-weight:600; }
+    .trend-badge { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700;
+        padding:3px 7px; border-radius:999px; margin-top:4px; }
+    .badge-down { background:#DCFCE7; color:#15803D; }
+    .badge-up { background:#FEE2E2; color:#B91C1C; }
+
+    .empty-state { text-align:center; padding:60px 30px; color:var(--muted); }
+    .empty-emoji { font-size:40px; margin-bottom:12px; }
+    .empty-title { font-size:15px; font-weight:700; color:var(--ink); margin-bottom:4px; }
+    .empty-sub { font-size:13px; }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position:absolute; bottom:0; left:0; right:0; background:var(--card); border-top:1px solid var(--line);
+        display:flex; justify-content:space-around; align-items:center; padding:10px 6px 14px; z-index:60; }
+    .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted);
+        font-size:11px; font-weight:600; cursor:pointer; background:none; border:none; }
+    .nav-item svg { width:23px; height:23px; }
+    .nav-item.active { color:var(--green-bright); }
+    .nav-fab { width:54px; height:54px; border-radius:50%; background:var(--green); display:flex; align-items:center;
+        justify-content:center; color:white; box-shadow:0 8px 20px rgba(21,115,71,0.4); margin-top:-26px;
+        border:4px solid var(--card); cursor:pointer; }
+    .nav-fab svg { width:26px; height:26px; }
+</style></head><body>
+<div class="phone">
+    <div class="header">
+        <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Rechercher un produit..." value="riz">
+        </div>
+        <div class="filters">
+            <select class="filter-select active"><option>Estuaire</option></select>
+            <select class="filter-select"><option>Toutes villes</option></select>
+        </div>
+    </div>
+
+    <div class="results-head">
+        <div class="results-count">4 produits trouvés</div>
+        <button class="sort-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><polyline points="6 14 12 20 18 14"></polyline></svg>
+            Moins cher</button>
+    </div>
+
+    <div class="result-list">
+        <div class="result-card">
+            <div class="result-emoji">🍚</div>
+            <div class="result-info">
+                <div class="result-name">Riz parfumé 5kg</div>
+                <div class="result-cat">Alimentaire</div>
+            </div>
+            <div class="result-price-box">
+                <div class="result-price">4 850<small> F</small></div>
+                <span class="trend-badge badge-down">▼ 0%</span>
+            </div>
+        </div>
+        <div class="result-card">
+            <div class="result-emoji">🍚</div>
+            <div class="result-info">
+                <div class="result-name">Riz cassé 25kg</div>
+                <div class="result-cat">Alimentaire</div>
+            </div>
+            <div class="result-price-box">
+                <div class="result-price">18 500<small> F</small></div>
+                <span class="trend-badge badge-up">▲ 3%</span>
+            </div>
+        </div>
+        <div class="result-card">
+            <div class="result-emoji">🍚</div>
+            <div class="result-info">
+                <div class="result-name">Riz basmati 5kg</div>
+                <div class="result-cat">Alimentaire</div>
+            </div>
+            <div class="result-price-box">
+                <div class="result-price">6 200<small> F</small></div>
+                <span class="trend-badge badge-down">▼ 2%</span>
+            </div>
+        </div>
+        <div class="result-card">
+            <div class="result-emoji">🍚</div>
+            <div class="result-info">
+                <div class="result-name">Riz gabonais local 5kg</div>
+                <div class="result-cat">Alimentaire</div>
+            </div>
+            <div class="result-price-box">
+                <div class="result-price">5 000<small> F</small></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- variante vide (à ne pas coder, juste référence) -->
+    <!--
+    <div class="empty-state">
+        <div class="empty-emoji">🔍</div>
+        <div class="empty-title">Aucun produit trouvé</div>
+        <div class="empty-sub">Essayez un autre mot-clé ou changez de filtre</div>
+    </div>
+    -->
+
+    <div class="bottom-nav">
+        <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            Accueil</button>
+        <button class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Chercher</button>
+        <button class="nav-fab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+        <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="12" height="18" rx="2"></rect><path d="M5 8H3m2 4H3m2 4H3"></path></svg>
+            Historique</button>
+        <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Profil</button>
+    </div>
+</div>
+</body></html>

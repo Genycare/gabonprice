@@ -90,6 +90,8 @@
 > **⚠️ SOURCE VISUELLE DE VÉRITÉ — À LIRE AVANT DE CODER UN ÉCRAN.**
 > Les fichiers **HTML de maquette** présents à la racine du projet (dossier `Gabon_price/`) sont la **référence visuelle officielle**. Avant d'implémenter un écran, Claude Code doit **ouvrir et lire le fichier `.html` correspondant** ci-dessous et reproduire fidèlement : mise en page, espacements, couleurs, typographie, composants, textes et interactions. Ne pas réinventer le design : ces maquettes sont validées.
 > Les maquettes sont des prototypes statiques HTML/CSS ; il faut les **réimplémenter proprement en composants React + Tailwind** (pas de copier-coller brut), en respectant leur rendu.
+>
+> **⚠️ Contexte / fichiers lourds :** `gabonprice-login-ULTIMATE.html` (~2,4 Mo) et `gabonprice-otp-verification.html` (~1,5 Mo) contiennent l'image du monument encodée en base64. **Ne pas faire lire ces fichiers en entier à Claude Code** (risque de « prompt too long »). Pour ces deux écrans, se baser sur leur structure/CSS ou sur les autres maquettes légères ; idéalement, externaliser l'image dans `public/` et la référencer par son chemin.
 
 | # | Écran | Fichier maquette (dans le dossier) | Statut |
 |---|---|---|---|
@@ -98,11 +100,11 @@
 | 3 | Accueil | `gabonprice-homepage.html` | ✅ Validé — présent |
 | 4 | Détail produit | `gabonprice-detail-produit.html` | ✅ Validé — présent |
 | 5 | Ajouter un prix | `gabonprice-ajouter-prix.html` | ✅ Validé — présent |
-| 6 | Recherche / résultats | À produire | ⬜ À faire |
-| 7 | Profil | À produire | ⬜ À faire |
-| 8 | Mes contributions / historique | À produire | ⬜ À faire |
-| 9 | Confirmation d'ajout | À produire | ⬜ À faire |
-| 10 | Panel admin | À produire | ⬜ À faire |
+| 6 | Recherche / résultats | `gabonprice-recherche.html` | ✅ Validé — présent |
+| 7 | Profil | `gabonprice-profil.html` | ✅ Validé — présent |
+| 8 | Mes contributions / historique | `gabonprice-mes-contributions.html` | ✅ Validé — présent |
+| 9 | Confirmation d'ajout | `gabonprice-confirmation.html` | ✅ Validé — présent |
+| 10 | Panel admin | `gabonprice-admin.html` | ✅ Validé — présent (à élargir en layout desktop au moment du code) |
 
 ### 5.1 Logo & icônes (dossier `logo-gabonprice/`)
 

@@ -46,15 +46,13 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <div className="bg-gradient-to-br from-brand-green to-brand-blue px-6 pb-14 pt-16 text-center text-white">
-        <div className="mx-auto mb-1 text-2xl font-extrabold tracking-tight">
-          Gabon<span className="text-brand-gold">Price</span>
-        </div>
-        <p className="text-sm text-white/85">Le prix juste, partout au Gabon</p>
-      </div>
+    <div className="flex min-h-svh flex-col bg-white">
+      <img src="/hero/auth-hero.png" alt="" className="aspect-[1157/747] w-full object-cover" />
 
-      <form onSubmit={handleSubmit} className="-mt-8 flex-1 rounded-t-[28px] bg-white px-6 pb-8 pt-8 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
+      <form
+        onSubmit={handleSubmit}
+        className="relative z-10 -mt-14 mx-5 flex-1 rounded-[26px] bg-white px-6 pb-8 pt-8 shadow-[0_10px_40px_rgba(0,0,0,0.15)]"
+      >
         <div className="mb-6 flex items-start gap-3.5">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[22%] bg-brand-green-light">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-brand-green-vivid">

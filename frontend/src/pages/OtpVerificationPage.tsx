@@ -138,14 +138,13 @@ export function OtpVerificationPage() {
   const timerLabel = `${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(secondsLeft % 60).padStart(2, '0')}`
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <div className="bg-gradient-to-br from-brand-green to-brand-blue px-6 pb-20 pt-14 text-center text-white">
-        <div className="mx-auto text-xl font-extrabold tracking-tight">
-          Gabon<span className="text-brand-gold">Price</span>
-        </div>
-      </div>
+    <div className="flex min-h-svh flex-col bg-white">
+      <img src="/hero/auth-hero.png" alt="" className="aspect-[1157/747] w-full object-cover" />
 
-      <form onSubmit={handleSubmit} className="-mt-12 flex-1 rounded-t-[26px] bg-white px-6 pb-6 pt-7 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]">
+      <form
+        onSubmit={handleSubmit}
+        className="relative z-10 -mt-14 mx-5 rounded-[26px] bg-white px-6 pb-6 pt-7 shadow-[0_10px_40px_rgba(0,0,0,0.15)]"
+      >
         <Link to="/connexion" className="mb-4.5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green-vivid">
           ← Modifier le numéro
         </Link>
@@ -155,7 +154,7 @@ export function OtpVerificationPage() {
           Entrez le code à 6 chiffres envoyé au <b className="text-ink">{phone}</b>
         </p>
 
-        <div className="mb-6.5 flex justify-between gap-2.5">
+        <div className="mb-6.5 grid grid-cols-6 gap-2.5">
           {code.map((digit, i) => (
             <input
               key={i}
@@ -169,7 +168,7 @@ export function OtpVerificationPage() {
               onChange={(e) => updateDigit(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
               onPaste={handlePaste}
-              className={`aspect-square max-w-16 flex-1 rounded-2xl border-2 text-center text-2xl font-bold transition-colors focus:border-brand-green-vivid focus:bg-white focus:shadow-[0_0_0_4px_rgba(22,163,74,0.12)] focus:outline-none ${
+              className={`aspect-square w-full max-w-16 rounded-2xl border-2 text-center text-2xl font-bold transition-colors focus:border-brand-green-vivid focus:bg-white focus:shadow-[0_0_0_4px_rgba(22,163,74,0.12)] focus:outline-none ${
                 digit ? 'border-brand-green-vivid bg-white' : 'border-line bg-[#F9FAFB]'
               }`}
             />
@@ -182,7 +181,7 @@ export function OtpVerificationPage() {
           {isSubmitting ? 'Vérification...' : 'Vérifier'}
         </Button>
 
-        <p className="mb-8 text-center text-sm text-muted">
+        <p className="text-center text-sm text-muted">
           Vous n'avez rien reçu ?{' '}
           {secondsLeft > 0 ? (
             <span className="font-bold text-ink">Renvoyer dans {timerLabel}</span>
@@ -192,17 +191,17 @@ export function OtpVerificationPage() {
             </button>
           )}
         </p>
-
-        <div className="grid grid-cols-3 gap-3.5 border-t border-line pt-6">
-          {FEATURES.map((feature) => (
-            <div key={feature.title}>
-              <div className="mb-1.5 text-brand-green-vivid">{feature.icon}</div>
-              <div className="mb-0.5 text-sm font-bold leading-tight text-ink">{feature.title}</div>
-              <div className="text-xs leading-snug text-muted">{feature.subtitle}</div>
-            </div>
-          ))}
-        </div>
       </form>
+
+      <div className="grid flex-1 grid-cols-3 gap-3.5 px-6 py-9">
+        {FEATURES.map((feature) => (
+          <div key={feature.title}>
+            <div className="mb-1.5 text-brand-green-vivid">{feature.icon}</div>
+            <div className="mb-0.5 text-sm font-bold leading-tight text-ink">{feature.title}</div>
+            <div className="text-xs leading-snug text-muted">{feature.subtitle}</div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

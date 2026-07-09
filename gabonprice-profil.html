@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>GabonPrice - Profil</title>
+<style>
+    :root {
+        --green: #157347; --green-bright: #16A34A; --green-soft: #ECFDF5;
+        --blue: #1E3A8A; --gold: #FCD34D; --ink: #111827; --muted: #6B7280;
+        --line: #E5E7EB; --bg: #F4F6F5; --card: #FFFFFF;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background:#d8d8d8; min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:20px; }
+    .phone { width:100%; max-width:430px; background:var(--bg); border-radius:34px; overflow:hidden;
+        position:relative; box-shadow:0 25px 70px rgba(0,0,0,0.3); min-height:900px; padding-bottom:90px; }
+    @media (max-width:430px){ body{padding:0;background:white;} .phone{border-radius:0;box-shadow:none;min-height:100vh;} }
+
+    .hero { background:linear-gradient(120deg, var(--green) 0%, var(--blue) 100%); padding:28px 18px 60px; text-align:center; color:white; }
+    .avatar { width:76px; height:76px; border-radius:50%; background:rgba(255,255,255,0.18); border:3px solid rgba(255,255,255,0.4);
+        display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; margin:0 auto 12px; }
+    .p-name { font-size:19px; font-weight:800; margin-bottom:4px; }
+    .p-phone { font-size:13px; opacity:0.85; margin-bottom:10px; }
+    .level-badge { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,0.18); padding:5px 12px;
+        border-radius:999px; font-size:12px; font-weight:700; }
+
+    .stat-card { background:var(--card); margin:-42px 18px 0; border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,0.1);
+        padding:16px; display:flex; position:relative; z-index:5; }
+    .stat-item { flex:1; text-align:center; }
+    .stat-item + .stat-item { border-left:1px solid var(--line); }
+    .stat-value { font-size:19px; font-weight:800; color:var(--ink); }
+    .stat-value.green { color:var(--green-bright); }
+    .stat-label { font-size:11px; color:var(--muted); font-weight:600; margin-top:2px; }
+
+    .karma-section { margin:20px 18px 0; background:var(--card); border-radius:16px; border:1px solid var(--line); padding:16px; }
+    .karma-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .karma-title { font-size:13px; font-weight:700; color:var(--ink); }
+    .karma-next { font-size:11px; color:var(--muted); }
+    .karma-bar-bg { height:8px; background:var(--bg); border-radius:999px; overflow:hidden; }
+    .karma-bar-fill { height:100%; background:linear-gradient(90deg, var(--green-bright), var(--gold)); border-radius:999px; }
+
+    .menu-section { margin:20px 18px 0; background:var(--card); border-radius:16px; border:1px solid var(--line); overflow:hidden; }
+    .menu-item { display:flex; align-items:center; gap:12px; padding:15px 16px; border-bottom:1px solid var(--line); cursor:pointer; }
+    .menu-item:last-child { border-bottom:none; }
+    .menu-icon { width:34px; height:34px; border-radius:10px; background:var(--green-soft); display:flex; align-items:center;
+        justify-content:center; flex-shrink:0; }
+    .menu-icon svg { width:17px; height:17px; color:var(--green-bright); }
+    .menu-label { flex:1; font-size:14px; font-weight:600; color:var(--ink); }
+    .menu-item svg.chevron { width:16px; height:16px; color:var(--muted); }
+    .menu-item.danger .menu-icon { background:#FEE2E2; }
+    .menu-item.danger .menu-icon svg { color:#B91C1C; }
+    .menu-item.danger .menu-label { color:#B91C1C; }
+
+    .app-version { text-align:center; font-size:11px; color:var(--muted); padding:18px; }
+
+    .bottom-nav { position:absolute; bottom:0; left:0; right:0; background:var(--card); border-top:1px solid var(--line);
+        display:flex; justify-content:space-around; align-items:center; padding:10px 6px 14px; z-index:60; }
+    .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted);
+        font-size:11px; font-weight:600; cursor:pointer; background:none; border:none; }
+    .nav-item svg { width:23px; height:23px; }
+    .nav-item.active { color:var(--green-bright); }
+    .nav-fab { width:54px; height:54px; border-radius:50%; background:var(--green); display:flex; align-items:center;
+        justify-content:center; color:white; box-shadow:0 8px 20px rgba(21,115,71,0.4); margin-top:-26px;
+        border:4px solid var(--card); cursor:pointer; }
+    .nav-fab svg { width:26px; height:26px; }
+</style></head><body>
+<div class="phone">
+    <div class="hero">
+        <div class="avatar">JP</div>
+        <div class="p-name">Jean-Paul M.</div>
+        <div class="p-phone">+241 6 12 34 56 78</div>
+        <div class="level-badge">⭐ Contributeur Or</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-item"><div class="stat-value green">340</div><div class="stat-label">Karma</div></div>
+        <div class="stat-item"><div class="stat-value">27</div><div class="stat-label">Prix publiés</div></div>
+        <div class="stat-item"><div class="stat-value">4</div><div class="stat-label">Provinces</div></div>
+    </div>
+
+    <div class="karma-section">
+        <div class="karma-head">
+            <div class="karma-title">Progression vers Platine</div>
+            <div class="karma-next">340 / 500</div>
+        </div>
+        <div class="karma-bar-bg"><div class="karma-bar-fill" style="width:68%"></div></div>
+    </div>
+
+    <div class="menu-section">
+        <div class="menu-item">
+            <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="12" height="18" rx="2"></rect><path d="M5 8H3m2 4H3m2 4H3"></path></svg></div>
+            <div class="menu-label">Mes contributions</div>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+        <div class="menu-item">
+            <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
+            <div class="menu-label">Province préférée</div>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+        <div class="menu-item">
+            <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+            <div class="menu-label">Paramètres</div>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+        <div class="menu-item">
+            <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></div>
+            <div class="menu-label">Aide &amp; support</div>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+        <div class="menu-item danger">
+            <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
+            <div class="menu-label">Déconnexion</div>
+        </div>
+    </div>
+
+    <div class="app-version">GabonPrice v1.0.0</div>
+
+    <div class="bottom-nav">
+        <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            Accueil</button>
+        <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Chercher</button>
+        <button class="nav-fab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+        <button class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="12" height="18" rx="2"></rect><path d="M5 8H3m2 4H3m2 4H3"></path></svg>
+            Historique</button>
+        <button class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Profil</button>
+    </div>
+</div>
+</body></html>

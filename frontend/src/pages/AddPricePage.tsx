@@ -1,9 +1,130 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import {
+  createPrice,
+  fetchPrice,
+  fetchProduct,
+  fetchProducts,
+  updatePrice,
+  type Product,
+} from '../lib/products'
+import { categoryEmoji } from '../lib/categories'
+import { priceFormSchema } from '../lib/priceSchema'
+import { PROVINCES, CITIES_BY_PROVINCE } from '../lib/locations'
+import { useSession } from '../hooks/useSession'
 
-const PROVINCES = ['Estuaire', 'Ogooué-Maritime', 'Haut-Ogooué', 'Moyen-Ogooué', 'Ngounié']
-const CITIES = ['Libreville', 'Port-Gentil', 'Franceville', 'Lambaréné', 'Mouila']
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
 export function AddPricePage() {
+  const navigate = useNavigate()
+  const { session } = useSession()
+  const [searchParams] = useSearchParams()
+  const editPriceId = searchParams.get('edit')
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [productQuery, setProductQuery] = useState('')
+  const [showProductSearch, setShowProductSearch] = useState(!editPriceId)
+
+  const [amount, setAmount] = useState('')
+  const [storeName, setStoreName] = useState('')
+  const [province, setProvince] = useState('')
+  const [city, setCity] = useState('')
+  const [neighborhood, setNeighborhood] = useState('')
+  const [purchaseDate, setPurchaseDate] = useState(todayIso())
+
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!editPriceId) return
+    fetchPrice(editPriceId).then(async (price) => {
+      if (session && price.user_id !== session.user.id) {
+        navigate('/', { replace: true })
+        return
+      }
+      const product = await fetchProduct(price.product_id)
+      setSelectedProduct(product)
+      setAmount(String(price.amount))
+      setStoreName(price.store_name)
+      setProvince(price.province)
+      setCity(price.city)
+      setNeighborhood(price.neighborhood ?? '')
+      setPurchaseDate(price.purchase_date)
+    })
+  }, [editPriceId, session, navigate])
+
+  const { data: productResults } = useQuery({
+    queryKey: ['product-search', productQuery],
+    queryFn: () => fetchProducts({ search: productQuery }),
+    enabled: showProductSearch && productQuery.trim().length >= 2,
+  })
+
+  const cityOptions = province ? CITIES_BY_PROVINCE[province as keyof typeof CITIES_BY_PROVINCE] : []
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmitError(null)
+
+    const parsed = priceFormSchema.safeParse({
+      productId: selectedProduct?.id ?? '',
+      amount,
+      storeName,
+      province,
+      city,
+      neighborhood: neighborhood || undefined,
+      purchaseDate,
+    })
+
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {}
+      for (const issue of parsed.error.issues) {
+        fieldErrors[String(issue.path[0])] = issue.message
+      }
+      setErrors(fieldErrors)
+      return
+    }
+    setErrors({})
+    setIsSubmitting(true)
+
+    const payload = {
+      product_id: parsed.data.productId,
+      amount: parsed.data.amount,
+      store_name: parsed.data.storeName,
+      province: parsed.data.province,
+      city: parsed.data.city,
+      neighborhood: parsed.data.neighborhood ?? null,
+      purchase_date: parsed.data.purchaseDate.toISOString().slice(0, 10),
+    }
+
+    try {
+      if (editPriceId) {
+        await updatePrice(editPriceId, payload)
+        navigate(`/produit/${parsed.data.productId}`)
+      } else if (session) {
+        await createPrice(session.user.id, payload)
+        navigate('/confirmation', {
+          state: {
+            productId: parsed.data.productId,
+            productName: selectedProduct!.name,
+            productCategory: selectedProduct!.category,
+            amount: parsed.data.amount,
+            storeName: parsed.data.storeName,
+            city: parsed.data.city,
+            neighborhood: parsed.data.neighborhood,
+          },
+        })
+      }
+    } catch {
+      setSubmitError("Impossible d'enregistrer le prix. Réessayez.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="pb-28">
       <div className="sticky top-0 z-40 flex items-center gap-3.5 border-b border-line bg-white px-4.5 py-4">
@@ -16,26 +137,60 @@ export function AddPricePage() {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </Link>
-        <div className="flex-1 text-[17px] font-extrabold text-ink">Ajouter un prix</div>
+        <div className="flex-1 text-[17px] font-extrabold text-ink">{editPriceId ? 'Modifier le prix' : 'Ajouter un prix'}</div>
       </div>
 
-      <form className="flex flex-col gap-5 px-4.5 py-5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-4.5 py-5">
         <div>
           <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Produit <span className="text-brand-green-vivid">*</span>
           </div>
-          <div className="flex items-center gap-3.5 rounded-2xl border-[1.5px] border-line bg-white px-4 py-3">
-            <div className="flex h-11.5 w-11.5 flex-shrink-0 items-center justify-center rounded-xl bg-brand-green-light text-2xl">
-              🍚
+
+          {selectedProduct && !showProductSearch ? (
+            <div className="flex items-center gap-3.5 rounded-2xl border-[1.5px] border-line bg-white px-4 py-3">
+              <div className="flex h-11.5 w-11.5 flex-shrink-0 items-center justify-center rounded-xl bg-brand-green-light text-2xl">
+                {categoryEmoji(selectedProduct.category)}
+              </div>
+              <div className="flex-1">
+                <div className="text-[15px] font-bold text-ink">{selectedProduct.name}</div>
+                <div className="text-xs text-muted">{selectedProduct.category}</div>
+              </div>
+              <button type="button" onClick={() => setShowProductSearch(true)} className="text-xs font-bold text-brand-green-vivid">
+                Changer
+              </button>
             </div>
-            <div className="flex-1">
-              <div className="text-[15px] font-bold text-ink">Riz parfumé 5 kg</div>
-              <div className="text-xs text-muted">Alimentaire</div>
+          ) : (
+            <div className="relative">
+              <input
+                type="text"
+                autoFocus
+                value={productQuery}
+                onChange={(e) => setProductQuery(e.target.value)}
+                placeholder="Rechercher un produit (ex : riz, gaz, ciment...)"
+                className="w-full rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink placeholder:text-[#9CA3AF] focus:border-brand-green-vivid focus:outline-none"
+              />
+              {productResults && productResults.length > 0 && (
+                <div className="absolute z-10 mt-1.5 w-full rounded-2xl border border-line bg-white p-1.5 shadow-lg">
+                  {productResults.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedProduct(p)
+                        setShowProductSearch(false)
+                        setProductQuery('')
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-app-bg"
+                    >
+                      <span className="text-lg">{categoryEmoji(p.category)}</span>
+                      <span className="text-sm font-semibold text-ink">{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <button type="button" className="text-xs font-bold text-brand-green-vivid">
-              Changer
-            </button>
-          </div>
+          )}
+          {errors.productId && <p className="mt-1.5 text-xs text-red-600">{errors.productId}</p>}
         </div>
 
         <div>
@@ -44,13 +199,16 @@ export function AddPricePage() {
           </div>
           <div className="relative">
             <input
-              type="tel"
+              type="number"
+              inputMode="numeric"
               placeholder="0"
-              defaultValue="4 500"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
               className="w-full rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 pr-15 text-[22px] font-extrabold text-brand-green focus:border-brand-green-vivid focus:shadow-[0_0_0_4px_rgba(22,163,74,0.1)] focus:outline-none"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[15px] font-bold text-muted">FCFA</span>
           </div>
+          {errors.amount && <p className="mt-1.5 text-xs text-red-600">{errors.amount}</p>}
         </div>
 
         <div>
@@ -60,43 +218,57 @@ export function AddPricePage() {
           <input
             type="text"
             placeholder="Ex : Mbolo, Cecado, Marché Mont-Bouët..."
-            defaultValue="Mbolo"
+            value={storeName}
+            onChange={(e) => setStoreName(e.target.value)}
             className="w-full rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink placeholder:text-[#9CA3AF] focus:border-brand-green-vivid focus:shadow-[0_0_0_4px_rgba(22,163,74,0.1)] focus:outline-none"
           />
+          {errors.storeName && <p className="mt-1.5 text-xs text-red-600">{errors.storeName}</p>}
         </div>
 
         <div>
           <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Localisation <span className="text-brand-green-vivid">*</span>
           </div>
-          <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-[#86EFAC] bg-[#DCFCE7] px-3.5 py-2.75">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5 flex-shrink-0 text-brand-green">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-            <span className="flex-1 text-[13px] font-semibold text-[#15803D]">Position détectée : Libreville · Glass</span>
-            <button type="button" className="text-xs font-bold text-brand-green">
-              Modifier
-            </button>
-          </div>
-          <div className="relative mb-3 text-center text-xs font-semibold text-muted">— ou saisir manuellement —</div>
           <div className="grid grid-cols-2 gap-2.5">
-            <select className="rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink focus:border-brand-green-vivid focus:outline-none">
+            <select
+              value={province}
+              onChange={(e) => {
+                setProvince(e.target.value)
+                setCity('')
+              }}
+              className="rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink focus:border-brand-green-vivid focus:outline-none"
+            >
+              <option value="">Province...</option>
               {PROVINCES.map((p) => (
-                <option key={p}>{p}</option>
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
             </select>
-            <select className="rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink focus:border-brand-green-vivid focus:outline-none">
-              {CITIES.map((c) => (
-                <option key={c}>{c}</option>
+            <select
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              disabled={!province}
+              className="rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink focus:border-brand-green-vivid focus:outline-none disabled:opacity-50"
+            >
+              <option value="">Ville...</option>
+              {cityOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
             <input
               type="text"
               placeholder="Quartier (ex : Glass, Akébé, Nombakélé)"
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
               className="col-span-2 rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink placeholder:text-[#9CA3AF] focus:border-brand-green-vivid focus:outline-none"
             />
           </div>
+          {(errors.province || errors.city) && (
+            <p className="mt-1.5 text-xs text-red-600">{errors.province || errors.city}</p>
+          )}
         </div>
 
         <div>
@@ -104,11 +276,13 @@ export function AddPricePage() {
             Date d'achat <span className="text-brand-green-vivid">*</span>
           </div>
           <input
-            type="text"
-            placeholder="jj/mm/aaaa"
-            defaultValue="06/07/2026"
+            type="date"
+            max={todayIso()}
+            value={purchaseDate}
+            onChange={(e) => setPurchaseDate(e.target.value)}
             className="w-full rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink focus:border-brand-green-vivid focus:outline-none"
           />
+          {errors.purchaseDate && <p className="mt-1.5 text-xs text-red-600">{errors.purchaseDate}</p>}
         </div>
 
         <div>
@@ -135,19 +309,22 @@ export function AddPricePage() {
             <div className="text-xs text-muted">Renforce la confiance de la communauté</div>
           </button>
         </div>
-      </form>
 
-      <div className="fixed inset-x-0 bottom-16 z-40 border-t border-line bg-white px-4.5 pb-5 pt-3.5">
-        <button
-          type="submit"
-          className="w-full rounded-2xl bg-brand-green py-4.25 text-[17px] font-extrabold text-white hover:bg-[#0f5c38]"
-        >
-          Publier le prix
-        </button>
-        <div className="mt-2 text-center text-[11px] text-muted">
-          Votre prix sera visible immédiatement et vérifié par la communauté
+        {submitError && <p className="text-sm text-red-600">{submitError}</p>}
+
+        <div className="fixed inset-x-0 bottom-16 z-40 border-t border-line bg-white px-4.5 pb-5 pt-3.5">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full rounded-2xl bg-brand-green py-4.25 text-[17px] font-extrabold text-white hover:bg-[#0f5c38] disabled:opacity-60"
+          >
+            {isSubmitting ? 'Enregistrement...' : editPriceId ? 'Enregistrer les modifications' : 'Publier le prix'}
+          </button>
+          <div className="mt-2 text-center text-[11px] text-muted">
+            Votre prix sera visible immédiatement et vérifié par la communauté
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   )
 }

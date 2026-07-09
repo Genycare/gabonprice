@@ -32,45 +32,57 @@
 - [x] Vérification du code + création/connexion de l'utilisateur + session — `supabase.auth.verifyOtp`, profil auto-créé via trigger existant
 - [x] Gestion des erreurs (code faux, expiré, rate limit) — messages d'erreur affichés sur les deux écrans
 - [x] Redirection post-connexion vers l'accueil
-- [ ] (Fast-follow) Plan WhatsApp OTP documenté
-- [ ] Protection des routes (redirection vers `/connexion` si non authentifié) — pas encore fait, toutes les pages sont accessibles sans session pour l'instant
+- [x] (Fast-follow) Plan WhatsApp OTP documenté — voir « Plan WhatsApp OTP (fast-follow) » ci-dessous
+- [x] Protection des routes (redirection vers `/connexion` si non authentifié) — `RequireAuth` (route layout avec `Outlet`) + hook `useSession` (session Supabase + écoute `onAuthStateChange`), routes `/`, `/recherche`, `/produit/:id`, `/ajouter`, `/historique`, `/profil` protégées ; `/connexion` et `/verification` restent publiques
+
+### Plan WhatsApp OTP (fast-follow)
+
+> Non implémenté — à activer seulement si le SMS Twilio s'avère trop coûteux ou peu fiable au Gabon (cf. cahier des charges §7 et §14).
+
+- **Limite actuelle** : le provider Phone de Supabase Auth (utilisé via `signInWithOtp`/`verifyOtp`) est configuré avec **un seul canal Twilio par projet** (SMS *ou* WhatsApp, pas les deux à la fois côté Dashboard). On ne peut donc pas basculer par utilisateur simplement en changeant un paramètre d'appel.
+- **Option retenue si besoin** : contourner le provider natif et appeler l'API **Twilio Verify** directement (elle supporte `channel: "sms"` et `channel: "whatsapp"` sur la même requête) depuis deux Edge Functions Supabase :
+  - `send-otp` : crée une vérification Twilio avec le canal choisi par l'utilisateur.
+  - `verify-otp` : appelle `verificationChecks`, puis si OK crée/connecte l'utilisateur via l'API Admin Supabase (`admin.createUser` + `generateLink`, ou un JWT signé côté serveur) puisqu'on sort du flux `auth.signInWithOtp` natif.
+  - Rate-limiting et expiration à réimplémenter manuellement (plus géré nativement par Supabase Auth dans ce cas).
+- **Impact UI** : ajouter un choix « Recevoir par SMS / WhatsApp » sur l'écran de connexion.
+- **Déclencheur** : à activer seulement si le taux de délivrabilité SMS Twilio au Gabon est mauvais ou si le coût SMS devient prohibitif (à surveiller après lancement, cf. Phase 8 amorçage).
 
 ## Phase 2 — Modèle de données & API
 
 - [x] Créer les tables `products`, `prices`, `price_ratings`, `price_reports`, `price_history`
 - [x] Index full-text (`tsvector`) sur `products` (config `french`, trigger de maintenance auto)
 - [x] RLS sur toutes les tables (lecture publique des prix `active`, écriture = propriétaire, admin = rôle) — advisors sécurité/perf Supabase passés au propre
-- [ ] Seed de données réalistes (produits + magasins + quelques prix de test)
-- [ ] Lecture des produits (liste, recherche, filtre province/ville) — côté frontend (query TanStack)
-- [ ] Lecture des prix d'un produit (triés du moins cher au plus cher) — côté frontend
-- [ ] Création d'un prix (validation Zod côté serveur) — formulaire côté frontend (RLS déjà en place)
-- [ ] Édition / suppression d'un prix par son propriétaire — côté frontend (RLS déjà en place)
+- [x] Seed de données réalistes (produits + magasins + quelques prix de test) — 11 produits (une catégorie de chaque), 27 prix répartis sur 4 provinces, historique 7j back-daté pour les tendances
+- [x] Lecture des produits (liste, recherche, filtre province/ville) — `lib/products.ts` (`fetchProducts`, recherche full-text `search_vector`, filtre province/ville via jointure sur `prices`), branché sur `SearchPage` (query TanStack)
+- [x] Lecture des prix d'un produit (triés du moins cher au plus cher) — `fetchProductPrices` (jointure `prices` + `users` pour contributeur/karma), branché sur `ProductDetailPage`
+- [x] Création d'un prix (validation Zod côté client + contraintes côté serveur) — `lib/priceSchema.ts` + `AddPricePage` (sélecteur de produit avec recherche live, soumission réelle via `createPrice`) ; côté serveur, contraintes SQL ajoutées (`prices_purchase_date_not_future`, `prices_store_name_not_blank`, `prices_province_not_blank`, `prices_city_not_blank`, `amount > 0` déjà existante)
+- [x] Édition / suppression d'un prix par son propriétaire — `AddPricePage` en mode édition (`?edit=<id>`, vérifie que l'utilisateur est propriétaire) + bouton Supprimer sur `ProductDetailPage` (RLS applique déjà la restriction propriétaire côté serveur)
 - [x] Recalcul du `median_price` + `is_median_outlier` à chaque nouveau prix — implémenté en triggers Postgres (`recalc_product_median`, `prices_set_outlier_flag`) plutôt qu'en Edge Function : plus fiable (atomique avec l'écriture), pas de latence réseau supplémentaire
 - [x] Mise à jour de `price_trend_7d` et `price_history` — même trigger `recalc_product_median`, testé manuellement (karma, médiane, outlier, transitions `flagged`/`removed`, karma -15)
 
 ## Phase 3 — Écrans cœur
 
-- [x] **Accueil** : header + sélecteur de province + recherche (d'après `gabonprice-homepage.html`) — UI fidèle, données statiques (mock), pas encore branchée sur Supabase
+- [x] **Accueil** : header + sélecteur de province + recherche (d'après `gabonprice-homepage.html`) — UI fidèle ; barre de recherche maintenant un lien vers `/recherche` (Tendances/Promos/Catégories encore en données mock, pas branchées sur Supabase)
 - [x] Accueil : section « Tendances du jour » (scroll horizontal) — UI faite, données mock
 - [x] Accueil : section « Promos détectées » — UI faite, données mock
 - [x] Accueil : grille de catégories — UI faite, données mock
 - [x] Barre de navigation basse (Accueil / Chercher / Ajouter / Historique / Profil)
-- [ ] **Recherche / résultats** : champ + filtres province/ville + tri — maquette pas encore produite (cf. §5 cahier des charges)
-- [x] **Fiche produit** : stats (médian, min, tendance) + liste des prix (d'après `gabonprice-detail-produit.html`) — UI fidèle, données mock
-- [x] Fiche produit : badge « meilleur prix », localisation, contributeur + karma, date, photo — UI faite, données mock
-- [x] Bouton « S'y rendre » (ouvre l'itinéraire vers le magasin) — bouton présent, action à brancher (lien Google Maps/Waze)
-- [x] **Ajouter un prix** : sélection produit + prix + magasin (d'après `gabonprice-ajouter-prix.html`) — UI fidèle, formulaire non encore branché (pas de soumission réelle)
-- [x] Ajouter un prix : géolocalisation auto + fallback manuel (Province → Ville → Quartier) — UI faite (statut "détecté" mock), geoloc navigateur réelle à brancher
-- [x] Ajouter un prix : date d'achat + upload photo (compression < 200 Ko) — UI faite, upload réel + compression à brancher
-- [ ] **Confirmation d'ajout** (écran de succès) — maquette pas encore produite
+- [x] **Recherche / résultats** : champ + filtres province/ville + tri (d'après `gabonprice-recherche.html`) — réalignée sur la maquette (bordures des filtres actifs, rayon des cartes 16px, compteur de résultats, badge de tri), branchée sur les vraies données
+- [x] **Fiche produit** : stats (médian, min, tendance) + liste des prix (d'après `gabonprice-detail-produit.html`) — UI fidèle, **branchée sur les vraies données** (stats et prix triés réels, plus mock)
+- [x] Fiche produit : badge « meilleur prix », localisation, contributeur + karma, date, photo — données réelles (contributeur/karma via jointure), pas de photo de ticket affichée (upload pas encore branché)
+- [ ] Bouton « S'y rendre » (ouvre l'itinéraire vers le magasin) — bouton présent, action à brancher (lien Google Maps/Waze)
+- [x] **Ajouter un prix** : sélection produit + prix + magasin (d'après `gabonprice-ajouter-prix.html`) — UI fidèle, **formulaire branché** : sélecteur de produit avec recherche live, soumission réelle (création + édition) en base
+- [ ] Ajouter un prix : géolocalisation auto + fallback manuel (Province → Ville → Quartier) — le fallback manuel (selects Province/Ville/Quartier) est branché et fonctionnel ; la détection géoloc auto du navigateur reste à faire (le bloc "position détectée" mock a été retiré du formulaire en attendant)
+- [ ] Ajouter un prix : date d'achat + upload photo (compression < 200 Ko) — date d'achat branchée (vrai `<input type="date">`) ; upload photo encore UI seule (bouton présent, nom fichier envoyé à `photo_url` pas implémenté)
+- [x] **Confirmation d'ajout** (écran de succès, d'après `gabonprice-confirmation.html`) — `ConfirmationPage.tsx` : après une création de prix (pas une édition), redirection vers `/confirmation` avec le résumé (produit, magasin, localisation, prix) et le karma gagné (+10, valeur fixe correspondant à la règle métier déjà en place) ; boutons « Voir le produit » / « Ajouter un autre prix » ; accès direct sans état redirige vers l'accueil
 
 ## Phase 4 — Communauté & modération
 
-- [x] Votes 👍 / 👎 sur un prix (contrainte 1 vote / utilisateur / prix) — table `price_ratings` + trigger, UI à faire (Phase 3)
+- [x] Votes 👍 / 👎 sur un prix (contrainte 1 vote / utilisateur / prix) — table `price_ratings` + trigger, compteurs affichés en lecture seule sur `ProductDetailPage`, clic pas encore branché
 - [x] Transitions de statut auto : 3 votes négatifs → `flagged`, 5 → `removed` — trigger `handle_price_rating_change`, testé (escalade flagged→removed vérifiée)
-- [ ] Signalement d'un prix (raison + statut `pending`) — table `price_reports` prête, formulaire UI à faire
+- [ ] Signalement d'un prix (raison + statut `pending`) — table `price_reports` prête, bouton "Signaler" affiché, formulaire/soumission pas encore branchés
 - [x] Calcul et attribution du karma (publier +10, 👍 +2, 👎 −1, prix retiré −15) — triggers Postgres, testé
-- [ ] Affichage du niveau utilisateur d'après le karma — calcul auto en base (`compute_user_level`), affichage UI à faire
+- [ ] Affichage du niveau utilisateur d'après le karma — calcul auto en base (`compute_user_level`), affichage UI à faire (karma brut affiché sur `ProductDetailPage`, pas le niveau)
 - [ ] Marquage visuel des prix `outlier` (« prix inhabituel ») — flag calculé en base (`is_median_outlier`), affichage UI à faire
 
 ## Phase 5 — Offline & PWA
@@ -84,8 +96,8 @@
 
 ## Phase 6 — Profil, contributions, paramètres
 
-- [ ] **Profil** : pseudo, karma, niveau, stats
-- [ ] **Mes contributions** : historique des prix publiés, éditer / supprimer
+- [ ] **Profil** : pseudo, karma, niveau, stats — maquette `gabonprice-profil.html` désormais disponible, pas encore implémentée en React
+- [ ] **Mes contributions** : historique des prix publiés, éditer / supprimer — maquette `gabonprice-mes-contributions.html` désormais disponible, pas encore implémentée en React
 - [ ] **Paramètres** : province préférée, gestion du compte, déconnexion
 - [ ] Suppression de compte (conformité données perso)
 
@@ -110,11 +122,13 @@
 
 ## Écrans restants à maquetter (design)
 
-- [ ] Recherche / résultats
-- [ ] Profil
-- [ ] Mes contributions / historique
-- [ ] Confirmation d'ajout
-- [ ] Panel admin
+- [x] Recherche / résultats — `gabonprice-recherche.html`
+- [x] Profil — `gabonprice-profil.html`
+- [x] Mes contributions / historique — `gabonprice-mes-contributions.html`
+- [x] Confirmation d'ajout — `gabonprice-confirmation.html`
+- [x] Panel admin — `gabonprice-admin.html` (au format téléphone pour la cohérence ; à élargir en layout desktop — sidebar + tableau — au moment du code)
+
+> ✅ Les 10 écrans sont maquettés.
 
 ---
 
@@ -129,4 +143,9 @@
 - **2026-07-09** : Déploiement Vercel en production — projet `gabonprice` (org `Genycare projects` / `camaras-projects-6cb362bc`) : **https://gabonprice.vercel.app**. Déployé directement via l'outil `deploy_to_vercel` (upload de l'arborescence source, Vercel installe et build) plutôt que via import Git — pas de repo GitHub distant pour l'instant, donc pas encore de preview automatique par PR. Variables `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` injectées via un `.env.production` inclus dans le déploiement (la clé anonyme est conçue pour être publique côté client, protégée par les RLS). Blocage rencontré : le connecteur Vercel de Claude n'avait pas le scope de création de projet malgré le rôle Owner de l'utilisateur sur l'équipe (erreur 403) — résolu en réautorisant le connecteur depuis les paramètres. À faire plus tard : lier un repo GitHub pour activer preview automatique par PR + déploiement continu (`git push` → déploiement), au lieu du déploiement manuel actuel.
 - **2026-07-09** : Repo poussé sur GitHub (`github.com/Genycare/gabonprice`, public) et lié au projet Vercel existant (`gabonprice`) via Project Settings → Git. Root Directory réglé sur `frontend`, variables `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` reconfigurées dans les Environment Variables du projet Vercel (celles injectées via `.env.production` lors du déploiement direct précédent ne s'appliquent pas aux builds Git). Connecter le repo ne déclenche pas de build automatiquement : un commit vide poussé sur `main` a servi de déclencheur pour le premier déploiement Git (`dpl_82cGCjRs7d1uQatomJai5WxobL2F`, `source: git`, READY). Déploiement continu maintenant actif : chaque push sur `main` déploie en prod, chaque PR aura une preview.
 - **2026-07-09** : 5 écrans (accueil, détail produit, ajouter un prix, connexion, vérification OTP) réimplémentés en React + Tailwind d'après les maquettes HTML, sans le cadre « téléphone » factice (qui n'était qu'un artefact de présentation statique — l'app réelle occupe le viewport mobile réel). Fournisseur SMS : **Twilio** choisi à la place d'Infobip (décision utilisateur) — intégré via le provider Phone natif de Supabase Auth (`signInWithOtp` / `verifyOtp`), ce qui évite d'avoir à coder soi-même le rate-limiting, le hachage du code et l'expiration (gérés nativement par Supabase Auth) ; écart au cahier des charges qui mentionnait une Edge Function + Infobip. **Reste à faire côté utilisateur** : activer Twilio dans Supabase Dashboard → Authentication → Sign In / Providers → Phone (clés Twilio non configurables par API, doivent être saisies manuellement). Accueil/fiche produit/ajout de prix utilisent des données statiques (mock) fidèles aux maquettes — le branchement sur les vraies requêtes Supabase (lecture produits/prix, soumission du formulaire d'ajout, géolocalisation navigateur, upload photo) reste à faire.
+- **2026-07-09** : Connexion/OTP alignées avec fidélité sur les maquettes HTML : image de hero réelle (photo du monument de l'Émergence, extraite du base64 des maquettes et servie depuis `public/hero/auth-hero.png`) au lieu d'un dégradé plat, carte flottante à coins arrondis avec marges (au lieu d'une feuille pleine largeur). Bug de débordement des 6 cases du code OTP sur mobile (390px) corrigé (`flex-1`+`aspect-square` remplacé par une grille `grid-cols-6`).
+- **2026-07-09** : Phase 1 clôturée. Protection des routes ajoutée (`RequireAuth` + `useSession`, hook Supabase `getSession`/`onAuthStateChange`) : les 6 écrans applicatifs (`/`, `/recherche`, `/produit/:id`, `/ajouter`, `/historique`, `/profil`) redirigent vers `/connexion` si aucune session, testé (visite de `/` sans session → redirection immédiate vers `/connexion`). Plan WhatsApp OTP documenté (fast-follow, non implémenté).
+- **2026-07-09** : Phase 2 clôturée. Seed réaliste inséré en base (11 produits couvrant les 8 catégories, 27 prix sur 4 provinces, historique 7j back-daté pour les tendances). Frontend branché sur Supabase pour de vrai : `lib/products.ts` centralise les requêtes (liste/recherche/filtre, détail produit, prix d'un produit avec contributeur, création/édition de prix). `SearchPage` (pas de maquette dédiée — UI construite dans le style existant, recherche full-text + filtre province/ville). `ProductDetailPage` affiche les vraies stats/prix triés et permet au propriétaire d'un prix de le modifier/supprimer. `AddPricePage` a maintenant un vrai sélecteur de produit (recherche live) et soumet réellement en base (mode création et édition via `?edit=<id>`), validé par Zod côté client + contraintes SQL côté serveur (prix positif, date pas dans le futur, champs non vides). Géolocalisation auto et upload photo restent non branchés (Phase 3, UI seulement). Testé : requêtes Supabase directes (recherche, filtre, tri, jointure contributeur) + rendu des 3 écrans en navigateur (contournement temporaire de `RequireAuth` en local pour le test visuel, retiré ensuite — aucune trace laissée dans le code).
+- **2026-07-09** : ⚠️ Incident — le fichier `progress.md` (et le tableau des maquettes dans `cahier-des-charges.md`) avait été écrasé par un processus externe (probablement une session parallèle travaillant sur les maquettes) : toutes les cases à cocher étaient revenues à `[ ]` (y compris des tâches terminées depuis le tout début du projet) et 4 maquettes (`gabonprice-recherche.html`, `gabonprice-profil.html`, `gabonprice-mes-contributions.html`, `gabonprice-confirmation.html`) étaient marquées « présentes » alors qu'elles n'existent pas sur le disque — seul `gabonprice-admin.html` existe réellement. Reconstruit à partir de l'état réel du code/de la base + de l'historique Git, avec confirmation de l'utilisateur.
+- **2026-07-09** : Les 4 maquettes manquantes créées (`gabonprice-recherche.html`, `gabonprice-profil.html`, `gabonprice-mes-contributions.html`, `gabonprice-confirmation.html`), dans le même système de design que les maquettes existantes (variables CSS partagées, conteneur `.phone`, topbar/bottom-nav identiques). Les 10 écrans du cahier des charges sont maintenant tous maquettés. `SearchPage.tsx` réalignée sur `gabonprice-recherche.html`. Écran de confirmation d'ajout implémenté (`ConfirmationPage.tsx`) et branché sur `AddPricePage` (uniquement à la création, pas à l'édition) ; testé en navigateur (rendu, navigation des deux boutons, garde-fou sur accès direct sans état). Profil et Mes contributions n'ont pas encore d'implémentation React (Phase 6).
 - _(ajouter les décisions au fil de l'eau)_
