@@ -10,6 +10,7 @@ import { ProductDetailPage } from './pages/ProductDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { OtpVerificationPage } from './pages/OtpVerificationPage'
 import { ConfirmationPage } from './pages/ConfirmationPage'
+import { SettingsPage } from './pages/SettingsPage'
 
 const ROUTES_WITHOUT_NAV = ['/connexion', '/verification', '/confirmation']
 
@@ -30,6 +31,7 @@ function App() {
           <Route path="/confirmation" element={<ConfirmationPage />} />
           <Route path="/historique" element={<HistoryPage />} />
           <Route path="/profil" element={<ProfilePage />} />
+          <Route path="/parametres" element={<SettingsPage />} />
         </Route>
       </Routes>
       {showBottomNav && <BottomNav />}

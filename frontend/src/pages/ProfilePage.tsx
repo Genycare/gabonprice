@@ -105,7 +105,7 @@ export function ProfilePage() {
           </svg>
         </Link>
 
-        <div className="flex items-center gap-3 border-b border-line px-4 py-3.75">
+        <Link to="/parametres" className="flex items-center gap-3 border-b border-line px-4 py-3.75">
           <div className="flex h-8.5 w-8.5 flex-shrink-0 items-center justify-center rounded-[10px] bg-brand-green-light">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4.25 w-4.25 text-brand-green-vivid">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -114,7 +114,20 @@ export function ProfilePage() {
           </div>
           <div className="flex-1 text-sm font-semibold text-ink">Province préférée</div>
           <div className="text-sm text-muted">{profile.preferred_province ?? '—'}</div>
-        </div>
+        </Link>
+
+        <Link to="/parametres" className="flex items-center gap-3 border-b border-line px-4 py-3.75">
+          <div className="flex h-8.5 w-8.5 flex-shrink-0 items-center justify-center rounded-[10px] bg-brand-green-light">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4.25 w-4.25 text-brand-green-vivid">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </div>
+          <div className="flex-1 text-sm font-semibold text-ink">Paramètres</div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </Link>
 
         <button
           onClick={handleSignOut}

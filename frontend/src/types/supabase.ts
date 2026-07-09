@@ -271,6 +271,7 @@ export type Database = {
     }
     Functions: {
       compute_user_level: { Args: { karma: number }; Returns: string }
+      delete_my_account: { Args: never; Returns: undefined }
       get_my_profile: {
         Args: never
         Returns: {
