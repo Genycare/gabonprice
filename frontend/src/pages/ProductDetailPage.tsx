@@ -1,22 +1,46 @@
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchProduct, fetchProductPrices, type PriceWithContributor } from '../lib/products'
+import { fetchMyRatings, fetchMyReportedPriceIds, reportPrice, setPriceRating } from '../lib/ratings'
 import { categoryEmoji } from '../lib/categories'
 import { formatFcfa } from '../lib/format'
 import { timeAgo, formatPurchaseDate } from '../lib/time'
 import { useSession } from '../hooks/useSession'
 import { supabase } from '../lib/supabase'
 
+const REPORT_REASONS = ['Prix incorrect', 'Information trompeuse ou obsolète', 'Doublon', 'Autre']
+
+function mapsUrl(entry: PriceWithContributor): string {
+  if (entry.latitude != null && entry.longitude != null) {
+    return `https://www.google.com/maps/search/?api=1&query=${entry.latitude},${entry.longitude}`
+  }
+  const query = encodeURIComponent(`${entry.store_name}, ${entry.city}, Gabon`)
+  return `https://www.google.com/maps/search/?api=1&query=${query}`
+}
+
 function PriceCard({
   entry,
   best,
   isOwner,
+  myRating,
+  reported,
+  reportOpen,
   onDelete,
+  onVote,
+  onToggleReport,
+  onReport,
 }: {
   entry: PriceWithContributor
   best: boolean
   isOwner: boolean
+  myRating: number | undefined
+  reported: boolean
+  reportOpen: boolean
   onDelete: (id: string) => void
+  onVote: (id: string, rating: 1 | -1) => void
+  onToggleReport: (id: string) => void
+  onReport: (id: string, reason: string) => void
 }) {
   return (
     <div className={`rounded-card-lg border bg-white p-4 shadow-sm ${best ? 'border-2 border-brand-green-vivid' : 'border-line'}`}>
@@ -33,6 +57,11 @@ function PriceCard({
               {entry.city}
               {entry.neighborhood ? ` · ${entry.neighborhood}` : ''}
             </div>
+            {entry.is_median_outlier && (
+              <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10px] font-extrabold text-[#B45309]">
+                ⚠ Prix inhabituel
+              </div>
+            )}
           </div>
         </div>
         <div className="text-right">
@@ -67,14 +96,30 @@ function PriceCard({
 
       <div className="flex items-center gap-2">
         <div className="flex gap-2">
-          <button className="flex items-center gap-1.5 rounded-[10px] border border-line bg-app-bg px-3 py-1.75 text-sm font-bold text-muted hover:border-brand-green-vivid hover:text-brand-green-vivid">
+          <button
+            onClick={() => onVote(entry.id, 1)}
+            disabled={isOwner}
+            className={`flex items-center gap-1.5 rounded-[10px] border px-3 py-1.75 text-sm font-bold disabled:opacity-50 ${
+              myRating === 1
+                ? 'border-brand-green-vivid bg-brand-green-light text-brand-green-vivid'
+                : 'border-line bg-app-bg text-muted hover:border-brand-green-vivid hover:text-brand-green-vivid'
+            }`}
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-3.75 w-3.75">
               <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z" />
               <line x1="7" y1="22" x2="7" y2="11" />
             </svg>
             {entry.helpful_votes}
           </button>
-          <button className="flex items-center gap-1.5 rounded-[10px] border border-line bg-app-bg px-3 py-1.75 text-sm font-bold text-muted hover:border-[#FCA5A5] hover:text-[#B91C1C]">
+          <button
+            onClick={() => onVote(entry.id, -1)}
+            disabled={isOwner}
+            className={`flex items-center gap-1.5 rounded-[10px] border px-3 py-1.75 text-sm font-bold disabled:opacity-50 ${
+              myRating === -1
+                ? 'border-[#FCA5A5] bg-[#FEE2E2] text-[#B91C1C]'
+                : 'border-line bg-app-bg text-muted hover:border-[#FCA5A5] hover:text-[#B91C1C]'
+            }`}
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-3.75 w-3.75">
               <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z" />
               <line x1="17" y1="2" x2="17" y2="13" />
@@ -82,34 +127,57 @@ function PriceCard({
             {entry.unhelpful_votes}
           </button>
         </div>
-        {isOwner ? (
-          <div className="ml-auto flex gap-2">
-            <Link
-              to={`/ajouter?edit=${entry.id}`}
-              className="flex items-center gap-1.5 rounded-[10px] border border-line bg-app-bg px-3.5 py-2 text-sm font-bold text-ink"
-            >
-              Modifier
-            </Link>
-            <button
-              type="button"
-              onClick={() => onDelete(entry.id)}
-              className="flex items-center gap-1.5 rounded-[10px] border border-[#FCA5A5] bg-white px-3.5 py-2 text-sm font-bold text-[#B91C1C]"
-            >
-              Supprimer
-            </button>
-          </div>
-        ) : (
-          !best && (
-            <button className="ml-auto flex items-center gap-1 text-xs text-muted">
+
+        <div className="ml-auto flex items-center gap-2">
+          {isOwner ? (
+            <>
+              <Link
+                to={`/ajouter?edit=${entry.id}`}
+                className="flex items-center gap-1.5 rounded-[10px] border border-line bg-app-bg px-3.5 py-2 text-sm font-bold text-ink"
+              >
+                Modifier
+              </Link>
+              <button
+                type="button"
+                onClick={() => onDelete(entry.id)}
+                className="flex items-center gap-1.5 rounded-[10px] border border-[#FCA5A5] bg-white px-3.5 py-2 text-sm font-bold text-[#B91C1C]"
+              >
+                Supprimer
+              </button>
+            </>
+          ) : reported ? (
+            <span className="text-xs font-semibold text-muted">Signalé ✓</span>
+          ) : (
+            <button type="button" onClick={() => onToggleReport(entry.id)} className="flex items-center gap-1 text-xs text-muted">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
                 <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
                 <line x1="4" y1="22" x2="4" y2="15" />
               </svg>
               Signaler
             </button>
-          )
-        )}
+          )}
+          <a href={mapsUrl(entry)} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-[10px] bg-brand-green px-3.5 py-2 text-sm font-bold text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+              <polygon points="3 11 22 2 13 21 11 13 3 11" />
+            </svg>
+            S'y rendre
+          </a>
+        </div>
       </div>
+
+      {reportOpen && (
+        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-line pt-3">
+          {REPORT_REASONS.map((reason) => (
+            <button
+              key={reason}
+              onClick={() => onReport(entry.id, reason)}
+              className="rounded-full border border-line bg-app-bg px-2.5 py-1 text-xs font-semibold text-ink hover:border-brand-green-vivid"
+            >
+              {reason}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -119,6 +187,7 @@ export function ProductDetailPage() {
   const { session } = useSession()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const [reportOpenId, setReportOpenId] = useState<string | null>(null)
 
   const { data: product } = useQuery({
     queryKey: ['product', id],
@@ -132,13 +201,43 @@ export function ProductDetailPage() {
     enabled: !!id,
   })
 
+  const priceIds = prices?.map((p) => p.id) ?? []
+
+  const { data: myRatings } = useQuery({
+    queryKey: ['my-ratings', id, session?.user.id],
+    queryFn: () => fetchMyRatings(priceIds, session!.user.id),
+    enabled: !!session && priceIds.length > 0,
+  })
+
+  const { data: reportedIds } = useQuery({
+    queryKey: ['my-reports', id, session?.user.id],
+    queryFn: () => fetchMyReportedPriceIds(priceIds, session!.user.id),
+    enabled: !!session && priceIds.length > 0,
+  })
+
+  function invalidatePrices() {
+    queryClient.invalidateQueries({ queryKey: ['product-prices', id] })
+    queryClient.invalidateQueries({ queryKey: ['product', id] })
+    queryClient.invalidateQueries({ queryKey: ['my-ratings', id, session?.user.id] })
+  }
+
   async function handleDelete(priceId: string) {
     if (!confirm('Supprimer ce prix ?')) return
     const { error } = await supabase.from('prices').delete().eq('id', priceId)
-    if (!error) {
-      queryClient.invalidateQueries({ queryKey: ['product-prices', id] })
-      queryClient.invalidateQueries({ queryKey: ['product', id] })
-    }
+    if (!error) invalidatePrices()
+  }
+
+  async function handleVote(priceId: string, rating: 1 | -1) {
+    if (!session) return
+    await setPriceRating(priceId, session.user.id, rating, myRatings?.[priceId])
+    invalidatePrices()
+  }
+
+  async function handleReport(priceId: string, reason: string) {
+    if (!session) return
+    await reportPrice(priceId, session.user.id, reason)
+    setReportOpenId(null)
+    queryClient.invalidateQueries({ queryKey: ['my-reports', id, session.user.id] })
   }
 
   const minPrice = prices && prices.length > 0 ? prices[0].amount : null
@@ -217,7 +316,13 @@ export function ProductDetailPage() {
             entry={entry}
             best={i === 0}
             isOwner={entry.user_id === session?.user.id}
+            myRating={myRatings?.[entry.id]}
+            reported={reportedIds?.has(entry.id) ?? false}
+            reportOpen={reportOpenId === entry.id}
             onDelete={handleDelete}
+            onVote={handleVote}
+            onToggleReport={(priceId) => setReportOpenId((current) => (current === priceId ? null : priceId))}
+            onReport={handleReport}
           />
         ))}
       </div>
