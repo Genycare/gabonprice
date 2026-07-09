@@ -57,6 +57,20 @@ export async function fetchProductPrices(productId: string): Promise<PriceWithCo
   return data as unknown as PriceWithContributor[]
 }
 
+export type UserPrice = Tables<'prices'> & {
+  products: Pick<Tables<'products'>, 'name' | 'category'> | null
+}
+
+export async function fetchUserPrices(userId: string): Promise<UserPrice[]> {
+  const { data, error } = await supabase
+    .from('prices')
+    .select('*, products(name, category)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as unknown as UserPrice[]
+}
+
 export async function fetchPrice(priceId: string): Promise<Tables<'prices'>> {
   const { data, error } = await supabase.from('prices').select('*').eq('id', priceId).single()
   if (error) throw error
