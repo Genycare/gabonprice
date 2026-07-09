@@ -24,15 +24,16 @@
 ## Phase 1 — Authentification (OTP)
 
 - [x] Créer la table `users` + RLS (profil auto-créé via trigger sur `auth.users`, niveaux calculés automatiquement)
-- [ ] Écran de connexion : saisie du numéro `+241` avec formatage
-- [ ] Endpoint / fonction d'envoi du code OTP (intégration Infobip)
-- [ ] **Rate-limiting** sur l'envoi d'OTP (1/60s, 5/h par numéro)
-- [ ] Stockage du code haché + expiration (5 min, usage unique)
-- [ ] Écran de vérification : 6 cases, auto-focus, renvoi avec minuteur
-- [ ] Vérification du code + création/connexion de l'utilisateur + session
-- [ ] Gestion des erreurs (code faux, expiré, trop de tentatives)
-- [ ] Redirection post-connexion vers l'accueil
+- [x] Écran de connexion : saisie du numéro `+241` avec formatage (auto-format `X XX XX XX XX`, d'après `gabonprice-login-ULTIMATE.html`)
+- [x] Endpoint / fonction d'envoi du code OTP — **Twilio** via Supabase Auth natif (`signInWithOtp`) plutôt qu'Infobip (écart au cahier des charges, décision utilisateur) ; ⚠️ **à activer dans le dashboard Supabase** (Authentication → Providers → Phone → Twilio, clés non configurables par API)
+- [x] **Rate-limiting** sur l'envoi d'OTP — géré nativement par Supabase Auth (pas de logique custom nécessaire)
+- [x] Stockage du code haché + expiration — géré nativement par Supabase Auth
+- [x] Écran de vérification : 6 cases, auto-focus + support paste, renvoi avec minuteur 30s (d'après `gabonprice-otp-verification.html`)
+- [x] Vérification du code + création/connexion de l'utilisateur + session — `supabase.auth.verifyOtp`, profil auto-créé via trigger existant
+- [x] Gestion des erreurs (code faux, expiré, rate limit) — messages d'erreur affichés sur les deux écrans
+- [x] Redirection post-connexion vers l'accueil
 - [ ] (Fast-follow) Plan WhatsApp OTP documenté
+- [ ] Protection des routes (redirection vers `/connexion` si non authentifié) — pas encore fait, toutes les pages sont accessibles sans session pour l'instant
 
 ## Phase 2 — Modèle de données & API
 
@@ -49,19 +50,19 @@
 
 ## Phase 3 — Écrans cœur
 
-- [ ] **Accueil** : header + sélecteur de province + recherche
-- [ ] Accueil : section « Tendances du jour » (scroll horizontal)
-- [ ] Accueil : section « Promos détectées »
-- [ ] Accueil : grille de catégories
-- [ ] Barre de navigation basse (Accueil / Chercher / Ajouter / Historique / Profil)
-- [ ] **Recherche / résultats** : champ + filtres province/ville + tri
-- [ ] **Fiche produit** : stats (médian, min, tendance) + liste des prix
-- [ ] Fiche produit : badge « meilleur prix », localisation, contributeur + karma, date, photo
-- [ ] Bouton « S'y rendre » (ouvre l'itinéraire vers le magasin)
-- [ ] **Ajouter un prix** : sélection produit + prix + magasin
-- [ ] Ajouter un prix : géolocalisation auto + fallback manuel (Province → Ville → Quartier)
-- [ ] Ajouter un prix : date d'achat + upload photo (compression < 200 Ko)
-- [ ] **Confirmation d'ajout** (écran de succès)
+- [x] **Accueil** : header + sélecteur de province + recherche (d'après `gabonprice-homepage.html`) — UI fidèle, données statiques (mock), pas encore branchée sur Supabase
+- [x] Accueil : section « Tendances du jour » (scroll horizontal) — UI faite, données mock
+- [x] Accueil : section « Promos détectées » — UI faite, données mock
+- [x] Accueil : grille de catégories — UI faite, données mock
+- [x] Barre de navigation basse (Accueil / Chercher / Ajouter / Historique / Profil)
+- [ ] **Recherche / résultats** : champ + filtres province/ville + tri — maquette pas encore produite (cf. §5 cahier des charges)
+- [x] **Fiche produit** : stats (médian, min, tendance) + liste des prix (d'après `gabonprice-detail-produit.html`) — UI fidèle, données mock
+- [x] Fiche produit : badge « meilleur prix », localisation, contributeur + karma, date, photo — UI faite, données mock
+- [x] Bouton « S'y rendre » (ouvre l'itinéraire vers le magasin) — bouton présent, action à brancher (lien Google Maps/Waze)
+- [x] **Ajouter un prix** : sélection produit + prix + magasin (d'après `gabonprice-ajouter-prix.html`) — UI fidèle, formulaire non encore branché (pas de soumission réelle)
+- [x] Ajouter un prix : géolocalisation auto + fallback manuel (Province → Ville → Quartier) — UI faite (statut "détecté" mock), geoloc navigateur réelle à brancher
+- [x] Ajouter un prix : date d'achat + upload photo (compression < 200 Ko) — UI faite, upload réel + compression à brancher
+- [ ] **Confirmation d'ajout** (écran de succès) — maquette pas encore produite
 
 ## Phase 4 — Communauté & modération
 
@@ -127,4 +128,5 @@
 - **2026-07-09** : Projet Supabase `Gabon_price` (`vgczurwskvwmbyhstwku`, région eu-west-3) connecté. Schéma complet créé (6 tables, RLS sur toutes, triggers métier). Écart au cahier des charges : le recalcul de médiane/outlier/tendance et la logique karma/modération sont implémentés en **triggers Postgres** (`recalc_product_median`, `prices_set_outlier_flag`, `prices_after_insert/update/delete`, `handle_price_rating_change`) plutôt qu'en **Edge Functions Deno** — plus simple, atomique avec l'écriture (pas de risque de désynchro si l'edge function échoue après l'insert), et suffisant pour le volume attendu au MVP. Numéro de téléphone protégé : jamais exposé via l'API publique (colonnes accessibles à `anon`/`authenticated` limitées à `id, username, karma_score, level, preferred_province, created_at` par des `GRANT` colonne par colonne ; le téléphone n'est lisible que par son propriétaire via la fonction `get_my_profile()`). Rôle admin porté par `users.is_admin` (pas de table de rôles séparée, suffisant pour le MVP). Advisors sécurité/performance Supabase passés au vert (seuls des `INFO` "unused index" restent, normal sur base vide). Testé manuellement : profil auto-créé à l'inscription, karma (+10 prix, +2/-1 vote, -15 suppression), médiane/tendance/historique, détection d'outlier (>±60 %), escalade `active → flagged (3 votes nets)→ removed (5 votes nets)`. Types TypeScript générés dans `frontend/src/types/supabase.ts` et branchés sur le client (`createClient<Database>`).
 - **2026-07-09** : Déploiement Vercel en production — projet `gabonprice` (org `Genycare projects` / `camaras-projects-6cb362bc`) : **https://gabonprice.vercel.app**. Déployé directement via l'outil `deploy_to_vercel` (upload de l'arborescence source, Vercel installe et build) plutôt que via import Git — pas de repo GitHub distant pour l'instant, donc pas encore de preview automatique par PR. Variables `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` injectées via un `.env.production` inclus dans le déploiement (la clé anonyme est conçue pour être publique côté client, protégée par les RLS). Blocage rencontré : le connecteur Vercel de Claude n'avait pas le scope de création de projet malgré le rôle Owner de l'utilisateur sur l'équipe (erreur 403) — résolu en réautorisant le connecteur depuis les paramètres. À faire plus tard : lier un repo GitHub pour activer preview automatique par PR + déploiement continu (`git push` → déploiement), au lieu du déploiement manuel actuel.
 - **2026-07-09** : Repo poussé sur GitHub (`github.com/Genycare/gabonprice`, public) et lié au projet Vercel existant (`gabonprice`) via Project Settings → Git. Root Directory réglé sur `frontend`, variables `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` reconfigurées dans les Environment Variables du projet Vercel (celles injectées via `.env.production` lors du déploiement direct précédent ne s'appliquent pas aux builds Git). Connecter le repo ne déclenche pas de build automatiquement : un commit vide poussé sur `main` a servi de déclencheur pour le premier déploiement Git (`dpl_82cGCjRs7d1uQatomJai5WxobL2F`, `source: git`, READY). Déploiement continu maintenant actif : chaque push sur `main` déploie en prod, chaque PR aura une preview.
+- **2026-07-09** : 5 écrans (accueil, détail produit, ajouter un prix, connexion, vérification OTP) réimplémentés en React + Tailwind d'après les maquettes HTML, sans le cadre « téléphone » factice (qui n'était qu'un artefact de présentation statique — l'app réelle occupe le viewport mobile réel). Fournisseur SMS : **Twilio** choisi à la place d'Infobip (décision utilisateur) — intégré via le provider Phone natif de Supabase Auth (`signInWithOtp` / `verifyOtp`), ce qui évite d'avoir à coder soi-même le rate-limiting, le hachage du code et l'expiration (gérés nativement par Supabase Auth) ; écart au cahier des charges qui mentionnait une Edge Function + Infobip. **Reste à faire côté utilisateur** : activer Twilio dans Supabase Dashboard → Authentication → Sign In / Providers → Phone (clés Twilio non configurables par API, doivent être saisies manuellement). Accueil/fiche produit/ajout de prix utilisent des données statiques (mock) fidèles aux maquettes — le branchement sur les vraies requêtes Supabase (lecture produits/prix, soumission du formulaire d'ajout, géolocalisation navigateur, upload photo) reste à faire.
 - _(ajouter les décisions au fil de l'eau)_
