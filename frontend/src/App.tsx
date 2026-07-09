@@ -1,6 +1,9 @@
+import { useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { BottomNav } from './components/BottomNav'
+import { OfflineBanner } from './components/OfflineBanner'
 import { RequireAuth } from './components/RequireAuth'
+import { syncOfflinePrices } from './lib/offlineQueue'
 import { HomePage } from './pages/HomePage'
 import { SearchPage } from './pages/SearchPage'
 import { AddPricePage } from './pages/AddPricePage'
@@ -18,8 +21,16 @@ function App() {
   const location = useLocation()
   const showBottomNav = !ROUTES_WITHOUT_NAV.includes(location.pathname)
 
+  useEffect(() => {
+    syncOfflinePrices()
+    const handleOnline = () => syncOfflinePrices()
+    window.addEventListener('online', handleOnline)
+    return () => window.removeEventListener('online', handleOnline)
+  }, [])
+
   return (
     <div className={showBottomNav ? 'pb-16' : ''}>
+      <OfflineBanner />
       <Routes>
         <Route path="/connexion" element={<LoginPage />} />
         <Route path="/verification" element={<OtpVerificationPage />} />

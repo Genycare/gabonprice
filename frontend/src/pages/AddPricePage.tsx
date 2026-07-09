@@ -15,6 +15,8 @@ import { PROVINCES, CITIES_BY_PROVINCE } from '../lib/locations'
 import { detectLocation } from '../lib/geolocation'
 import { compressImage, uploadPricePhoto } from '../lib/photo'
 import { useSession } from '../hooks/useSession'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
+import { enqueuePrice } from '../lib/offlineQueue'
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
@@ -25,6 +27,7 @@ type LocationStatus = 'detecting' | 'detected' | 'unavailable'
 export function AddPricePage() {
   const navigate = useNavigate()
   const { session } = useSession()
+  const isOnline = useOnlineStatus()
   const [searchParams] = useSearchParams()
   const editPriceId = searchParams.get('edit')
 
@@ -70,7 +73,7 @@ export function AddPricePage() {
       if (price.latitude != null && price.longitude != null) {
         setCoords({ latitude: price.latitude, longitude: price.longitude })
       }
-    })
+    }, () => setSubmitError("Modification indisponible hors ligne. Réessayez avec une connexion."))
   }, [editPriceId, session, navigate])
 
   useEffect(() => {
@@ -144,6 +147,40 @@ export function AddPricePage() {
     setIsSubmitting(true)
 
     try {
+      if (!isOnline && !editPriceId && session) {
+        const payload = {
+          product_id: parsed.data.productId,
+          amount: parsed.data.amount,
+          store_name: parsed.data.storeName,
+          province: parsed.data.province,
+          city: parsed.data.city,
+          neighborhood: parsed.data.neighborhood ?? null,
+          purchase_date: parsed.data.purchaseDate.toISOString().slice(0, 10),
+          latitude: coords?.latitude ?? null,
+          longitude: coords?.longitude ?? null,
+          photo_url: null,
+        }
+        enqueuePrice({
+          userId: session.user.id,
+          price: payload,
+          productName: selectedProduct!.name,
+          productCategory: selectedProduct!.category,
+        })
+        navigate('/confirmation', {
+          state: {
+            productId: parsed.data.productId,
+            productName: selectedProduct!.name,
+            productCategory: selectedProduct!.category,
+            amount: parsed.data.amount,
+            storeName: parsed.data.storeName,
+            city: parsed.data.city,
+            neighborhood: parsed.data.neighborhood,
+            pending: true,
+          },
+        })
+        return
+      }
+
       let finalPhotoUrl = photoUrl
       if (photoFile && session) {
         setIsUploadingPhoto(true)
@@ -375,7 +412,9 @@ export function AddPricePage() {
           <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Photo du ticket <span className="text-[11px] font-semibold text-muted">(optionnel)</span>
           </div>
-          {currentPhotoPreview ? (
+          {!isOnline ? (
+            <p className="text-xs text-muted">Indisponible hors ligne — votre prix sera publié sans photo.</p>
+          ) : currentPhotoPreview ? (
             <div className="relative overflow-hidden rounded-2xl border-[1.5px] border-line">
               <img src={currentPhotoPreview} alt="Ticket" className="h-40 w-full object-cover" />
               <button
@@ -415,10 +454,20 @@ export function AddPricePage() {
             disabled={isSubmitting}
             className="w-full rounded-2xl bg-brand-green py-4.25 text-[17px] font-extrabold text-white hover:bg-[#0f5c38] disabled:opacity-60"
           >
-            {isUploadingPhoto ? 'Envoi de la photo...' : isSubmitting ? 'Enregistrement...' : editPriceId ? 'Enregistrer les modifications' : 'Publier le prix'}
+            {isUploadingPhoto
+              ? 'Envoi de la photo...'
+              : isSubmitting
+                ? 'Enregistrement...'
+                : editPriceId
+                  ? 'Enregistrer les modifications'
+                  : !isOnline
+                    ? 'Enregistrer (hors ligne)'
+                    : 'Publier le prix'}
           </button>
           <div className="mt-2 text-center text-[11px] text-muted">
-            Votre prix sera visible immédiatement et vérifié par la communauté
+            {isOnline
+              ? 'Votre prix sera visible immédiatement et vérifié par la communauté'
+              : 'Hors ligne : votre prix sera publié automatiquement à la reconnexion'}
           </div>
         </div>
       </form>

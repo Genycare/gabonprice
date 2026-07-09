@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchProducts } from '../lib/products'
+import { fetchProducts, type Product } from '../lib/products'
 import { categoryEmoji } from '../lib/categories'
 import { formatFcfa } from '../lib/format'
 import { PROVINCES, CITIES_BY_PROVINCE } from '../lib/locations'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
+import { cacheProducts, searchOfflineProducts } from '../lib/offlineProducts'
 
 export function SearchPage() {
+  const isOnline = useOnlineStatus()
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [province, setProvince] = useState('')
@@ -17,10 +20,19 @@ export function SearchPage() {
     return () => clearTimeout(timer)
   }, [searchInput])
 
-  const { data: products, isLoading, isError } = useQuery({
+  const { data: onlineProducts, isLoading, isError } = useQuery({
     queryKey: ['products', { search, province, city }],
     queryFn: () => fetchProducts({ search: search || undefined, province: province || undefined, city: city || undefined }),
+    enabled: isOnline,
   })
+
+  useEffect(() => {
+    if (isOnline && onlineProducts && !search && !province && !city) {
+      cacheProducts(onlineProducts)
+    }
+  }, [isOnline, onlineProducts, search, province, city])
+
+  const products: Product[] | undefined = isOnline ? onlineProducts : searchOfflineProducts(search)
 
   const cityOptions = province ? CITIES_BY_PROVINCE[province as keyof typeof CITIES_BY_PROVINCE] : []
 
@@ -41,40 +53,46 @@ export function SearchPage() {
             className="flex-1 border-none bg-transparent text-[15px] text-ink placeholder:text-[#9CA3AF] focus:outline-none"
           />
         </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <select
-            value={province}
-            onChange={(e) => {
-              setProvince(e.target.value)
-              setCity('')
-            }}
-            className={`rounded-xl border-[1.5px] px-3 py-2.5 text-[13px] font-semibold focus:outline-none ${
-              province ? 'border-brand-green-light bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
-            }`}
-          >
-            <option value="">Toutes provinces</option>
-            {PROVINCES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <select
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            disabled={!province}
-            className={`rounded-xl border-[1.5px] px-3 py-2.5 text-[13px] font-semibold focus:outline-none disabled:opacity-50 ${
-              city ? 'border-brand-green-light bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
-            }`}
-          >
-            <option value="">Toutes villes</option>
-            {cityOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
+        {isOnline ? (
+          <div className="grid grid-cols-2 gap-2.5">
+            <select
+              value={province}
+              onChange={(e) => {
+                setProvince(e.target.value)
+                setCity('')
+              }}
+              className={`rounded-xl border-[1.5px] px-3 py-2.5 text-[13px] font-semibold focus:outline-none ${
+                province ? 'border-brand-green-light bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
+              }`}
+            >
+              <option value="">Toutes provinces</option>
+              {PROVINCES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+            <select
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              disabled={!province}
+              className={`rounded-xl border-[1.5px] px-3 py-2.5 text-[13px] font-semibold focus:outline-none disabled:opacity-50 ${
+                city ? 'border-brand-green-light bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
+              }`}
+            >
+              <option value="">Toutes villes</option>
+              {cityOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <p className="text-center text-xs font-semibold text-muted">
+            Hors ligne — recherche sur les produits déjà consultés, filtres province/ville indisponibles
+          </p>
+        )}
       </header>
 
       <div className="flex items-center justify-between px-4.5 pb-2.5 pt-4">
@@ -91,8 +109,8 @@ export function SearchPage() {
       </div>
 
       <div className="flex flex-col gap-2.5 px-4.5 pb-5">
-        {isLoading && <p className="text-center text-sm text-muted">Chargement...</p>}
-        {isError && <p className="text-center text-sm text-red-600">Erreur lors du chargement des produits.</p>}
+        {isOnline && isLoading && <p className="text-center text-sm text-muted">Chargement...</p>}
+        {isOnline && isError && <p className="text-center text-sm text-red-600">Erreur lors du chargement des produits.</p>}
         {products?.length === 0 && <p className="text-center text-sm text-muted">Aucun produit trouvé.</p>}
 
         {products?.map((product) => (

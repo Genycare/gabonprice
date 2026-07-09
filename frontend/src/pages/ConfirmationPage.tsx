@@ -11,6 +11,7 @@ interface ConfirmationState {
   storeName: string
   city: string
   neighborhood?: string | null
+  pending?: boolean
 }
 
 export function ConfirmationPage() {
@@ -32,14 +33,22 @@ export function ConfirmationPage() {
         </svg>
       </div>
 
-      <h1 className="mb-2 text-[22px] font-extrabold text-ink">Prix publié !</h1>
+      <h1 className="mb-2 text-[22px] font-extrabold text-ink">{state.pending ? 'Prix enregistré' : 'Prix publié !'}</h1>
       <p className="mb-6 max-w-[280px] text-sm leading-relaxed text-muted">
-        Merci pour votre contribution. Elle est déjà visible par toute la communauté GabonPrice.
+        {state.pending
+          ? 'Vous êtes hors ligne : ce prix sera publié automatiquement dès que votre connexion sera rétablie.'
+          : 'Merci pour votre contribution. Elle est déjà visible par toute la communauté GabonPrice.'}
       </p>
 
-      <div className="mb-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-gold to-[#F59E0B] px-4.5 py-2.5 text-sm font-extrabold text-[#78350F] shadow-[0_6px_18px_rgba(245,158,11,0.3)]">
-        ★ +10 karma
-      </div>
+      {state.pending ? (
+        <div className="mb-7 inline-flex items-center gap-2 rounded-full bg-app-bg px-4.5 py-2.5 text-sm font-extrabold text-muted">
+          ⏳ En attente de synchronisation
+        </div>
+      ) : (
+        <div className="mb-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-gold to-[#F59E0B] px-4.5 py-2.5 text-sm font-extrabold text-[#78350F] shadow-[0_6px_18px_rgba(245,158,11,0.3)]">
+          ★ +10 karma
+        </div>
+      )}
 
       <div className="mb-8 flex w-full items-center gap-3 rounded-2xl border border-line bg-app-bg p-3.5 text-left">
         <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[11px] border border-line bg-white text-xl">
@@ -59,12 +68,14 @@ export function ConfirmationPage() {
       </div>
 
       <div className="flex w-full flex-col gap-2.5">
-        <button
-          onClick={() => navigate(`/produit/${state.productId}`)}
-          className="w-full rounded-2xl bg-brand-green py-4 text-base font-extrabold text-white hover:bg-[#0f5c38]"
-        >
-          Voir le produit
-        </button>
+        {!state.pending && (
+          <button
+            onClick={() => navigate(`/produit/${state.productId}`)}
+            className="w-full rounded-2xl bg-brand-green py-4 text-base font-extrabold text-white hover:bg-[#0f5c38]"
+          >
+            Voir le produit
+          </button>
+        )}
         <button
           onClick={() => navigate('/ajouter')}
           className="w-full rounded-2xl border-[1.5px] border-line bg-white py-4 text-[15px] font-extrabold text-ink"
