@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import { BottomNav } from './components/BottomNav'
 import { OfflineBanner } from './components/OfflineBanner'
 import { RequireAuth } from './components/RequireAuth'
+import { RequireAdmin } from './components/RequireAdmin'
 import { syncOfflinePrices } from './lib/offlineQueue'
 import { HomePage } from './pages/HomePage'
 import { SearchPage } from './pages/SearchPage'
@@ -14,8 +15,9 @@ import { LoginPage } from './pages/LoginPage'
 import { OtpVerificationPage } from './pages/OtpVerificationPage'
 import { ConfirmationPage } from './pages/ConfirmationPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { AdminPage } from './pages/AdminPage'
 
-const ROUTES_WITHOUT_NAV = ['/connexion', '/verification', '/confirmation']
+const ROUTES_WITHOUT_NAV = ['/connexion', '/verification', '/confirmation', '/admin']
 
 function App() {
   const location = useLocation()
@@ -43,6 +45,9 @@ function App() {
           <Route path="/historique" element={<HistoryPage />} />
           <Route path="/profil" element={<ProfilePage />} />
           <Route path="/parametres" element={<SettingsPage />} />
+          <Route element={<RequireAdmin />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
         </Route>
       </Routes>
       {showBottomNav && <BottomNav />}

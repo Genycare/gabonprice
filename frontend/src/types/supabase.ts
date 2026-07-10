@@ -270,6 +270,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_ban_user: { Args: { p_user_id: string }; Returns: undefined }
+      admin_delete_price: { Args: { p_price_id: string }; Returns: undefined }
+      admin_get_stats: { Args: never; Returns: Json }
+      admin_resolve_report: {
+        Args: { p_report_id: string }
+        Returns: undefined
+      }
+      admin_restore_price: { Args: { p_price_id: string }; Returns: undefined }
       compute_user_level: { Args: { karma: number }; Returns: string }
       delete_my_account: { Args: never; Returns: undefined }
       get_my_profile: {
@@ -293,6 +301,7 @@ export type Database = {
         }
       }
       is_admin: { Args: { uid?: string }; Returns: boolean }
+      is_banned: { Args: { uid?: string }; Returns: boolean }
       recalc_product_median: {
         Args: { p_product_id: string }
         Returns: undefined
@@ -309,7 +318,7 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals["public"]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends

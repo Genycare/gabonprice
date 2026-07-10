@@ -91,6 +91,23 @@ export function ProfilePage() {
         )}
       </div>
 
+      {profile.is_admin && (
+        <Link
+          to="/admin"
+          className="mx-4.5 mt-5 flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3.75"
+        >
+          <div className="flex h-8.5 w-8.5 flex-shrink-0 items-center justify-center rounded-[10px] bg-ink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4.25 w-4.25 text-white">
+              <path d="M12 2 3 6v6c0 5 3.5 8.5 9 10 5.5-1.5 9-5 9-10V6l-9-4z" />
+            </svg>
+          </div>
+          <div className="flex-1 text-sm font-semibold text-ink">Administration</div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-muted">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </Link>
+      )}
+
       <div className="mx-4.5 mt-5 overflow-hidden rounded-2xl border border-line bg-white">
         <Link to="/historique" className="flex items-center gap-3 border-b border-line px-4 py-3.75">
           <div className="flex h-8.5 w-8.5 flex-shrink-0 items-center justify-center rounded-[10px] bg-brand-green-light">
