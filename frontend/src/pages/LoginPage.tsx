@@ -48,7 +48,7 @@ export function LoginPage() {
   return (
     <div className="relative min-h-svh bg-white">
       <div className="relative w-full" style={{ aspectRatio: '1157 / 1158' }}>
-        <img src="/hero/auth-hero.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src="/hero/auth-hero.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
 
         <form
           onSubmit={handleSubmit}
