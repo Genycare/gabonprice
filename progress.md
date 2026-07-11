@@ -113,13 +113,23 @@
 
 ## Phase 8 — Finition & lancement
 
-- [ ] Tests des parcours critiques (OTP, ajout de prix, vote)
-- [ ] Passe accessibilité (contrastes, labels, focus, cibles tactiles)
-- [ ] Passe performance (poids des pages, lazy-loading images, test 3G)
-- [ ] Intégration Sentry (suivi des erreurs)
-- [ ] Politique de confidentialité + mentions
-- [ ] Déploiement production (Vercel + Supabase Pro)
-- [ ] Amorçage : recruter les premiers contributeurs, remplir les catégories clés
+- [x] Tests des parcours critiques (OTP, ajout de prix, vote) — OTP validé de bout en bout par l'utilisateur en conditions réelles à plusieurs reprises ; ajout de prix/création de produit et vote/signalement revérifiés par simulation SQL en transaction annulée après les changements récents (pivot email, Phase 7 admin, correctif RLS) — tout fonctionne comme attendu
+- [x] Passe accessibilité (contrastes, labels, focus, cibles tactiles) — aria-label sur les boutons icône-seule, `<label htmlFor>`/aria-label sur tous les champs de formulaire, `<h1>` + landmark `<main>` ajoutés partout où ils manquaient, cibles tactiles portées à 44px minimum (WCAG 2.5.5) sur les éléments les plus utilisés (vote, recherche produit, catégories, tabs/actions admin) ; `:focus-visible` global déjà en place
+- [x] Passe performance (poids des pages, lazy-loading images, test 3G) — routes converties en `React.lazy()`/`Suspense` (bundle principal 655 Ko → 272 Ko avant Sentry, chaque page ne charge plus que son propre code), `loading="lazy"` sur les photos de ticket dans la liste des prix
+- [x] Intégration Sentry (suivi des erreurs) — `@sentry/react` initialisé au démarrage, `ErrorBoundary` envoie chaque erreur interceptée à Sentry en plus de l'affichage local
+- [x] Politique de confidentialité + mentions légales — pages publiques `/confidentialite` et `/mentions-legales`, éditeur Mohamed Camara (particulier), contenu spécifique à ce que l'app fait réellement (pas de boilerplate)
+- [x] Déploiement production (Vercel + Supabase) — déploiement continu actif sur `main`, tous les déploiements récents READY ; advisors Supabase vérifiés (3 policies RLS optimisées pour la performance — `auth.uid()` était réévalué par ligne ; le reste des warnings sont des faux positifs attendus, cf. journal ci-dessous)
+- [ ] Amorçage : recruter les premiers contributeurs, remplir les catégories clés — checklist ci-dessous, action humaine (marketing/communauté), pas un travail de code
+
+### Checklist d'amorçage (à exécuter par l'utilisateur)
+
+1. **Remplir les catégories clés avant le lancement public** : viser au moins 3-5 prix par catégorie dans 2-3 villes (Libreville en priorité) pour que les premiers visiteurs voient une app qui a déjà du contenu, pas une page vide. Les 8 catégories actuelles : Alimentaire, Gaz & Énergie, Construction, Hygiène, Électronique, Pharmacie, Vêtements, Carburant.
+2. **Recruter un noyau de 10-20 premiers contributeurs** : cercle proche (famille, amis, groupes WhatsApp/Facebook locaux à Libreville) plutôt qu'une annonce large — plus facile à relancer individuellement si l'activité retombe.
+3. **Donner un rôle actif aux tout premiers utilisateurs** : leur proposer explicitement de devenir modérateurs/admin (`is_admin`) une fois quelques dizaines de contributions passées, pour répartir la charge de modération avant que ça devienne nécessaire.
+4. **Suivre `admin_get_stats()` chaque semaine** (page `/admin`) : nombre de prix actifs, contributeurs actifs/30j, fraîcheur médiane — sert de signal d'alerte si l'activité retombe après le lancement initial.
+5. **Vérifier Sentry régulièrement** les premiers jours suivant le lancement : les premiers vrais utilisateurs sur des appareils/réseaux variés font remonter des bugs qu'aucun test interne n'attrape.
+6. **Domaine `gabonprice.xyz`** : la délivrabilité email s'améliore avec le temps/volume d'envoi (actuellement encore en spam sur Yahoo) — rien à faire de plus, à revérifier dans quelques semaines.
+7. **Annonce publique** (Facebook/WhatsApp groupes Gabon, forums locaux) seulement après les étapes 1-3, pour ne pas gaspiller le premier pic de trafic sur une app vide.
 
 ---
 
