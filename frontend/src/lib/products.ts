@@ -107,6 +107,11 @@ export async function createPrice(userId: string, price: NewPrice) {
 }
 
 export async function updatePrice(priceId: string, price: NewPrice) {
-  const { error } = await supabase.from('prices').update(price).eq('id', priceId)
+  // product_id n'est jamais modifiable en édition (l'UI ne le propose pas) et n'est
+  // plus accordé en écriture par GRANT UPDATE ; l'omettre évite une erreur de
+  // permission même quand sa valeur reste inchangée (Postgres vérifie le privilège
+  // colonne dès qu'elle apparaît dans le SET, pas seulement si la valeur change).
+  const { product_id: _productId, ...updatable } = price
+  const { error } = await supabase.from('prices').update(updatable).eq('id', priceId)
   if (error) throw error
 }
