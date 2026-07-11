@@ -11,6 +11,8 @@ Le projet part d'une base solide : RLS activée partout, aucune clé secrète ex
 
 Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée aujourd'hui. Les points **Élevé/Moyen** ci-dessous sont soit des violations du principe du moindre privilège (défense en profondeur), soit des lacunes concrètes (upload, headers, hygiène de session) qui méritent correction avant une ouverture publique plus large.
 
+**Mise à jour** : 9 des 10 points (E1, M1, M2, M3, F1, F2, F3, F5) ont été corrigés, testés (transactions SQL annulées reproduisant les scénarios réels + `npm run build`) et déployés le 2026-07-11. Un correctif (F3, retrait du GRANT `UPDATE(product_id)`) a révélé une régression réelle sur l'édition de prix avant déploiement — détectée en reproduisant le payload exact de l'app, corrigée côté frontend (`updatePrice()`), revérifiée. Seul M4 (config OTP) et F4 (Leaked Password Protection) restent en attente : ce sont des réglages de plateforme Supabase Dashboard, non accessibles via SQL/migration.
+
 ---
 
 ## 🔴 Élevé
@@ -96,33 +98,39 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 
 ## 🟡 Faible
 
-### F1 — `delete_my_account()` exécutable par le rôle `anon`
+### F1 — `delete_my_account()` exécutable par le rôle `anon` — ✅ CORRIGÉ (2026-07-11)
+
+> `REVOKE EXECUTE ... FROM anon` appliqué. Vérifié via `has_function_privilege('anon', ..., 'EXECUTE') = false`.
 
 - **Où** : `GRANT EXECUTE` sur `public.delete_my_account()` inclut `anon` (confirmé par requête sur `pg_proc`/`has_function_privilege`).
 - **Risque** : nul en pratique — la fonction fait `delete from auth.users where id = auth.uid()`, et `auth.uid()` vaut `NULL` pour une requête anonyme, donc la suppression ne cible aucune ligne. Reste une surface d'attaque inutile et une incohérence avec le principe du moindre privilège appliqué partout ailleurs dans le projet.
 - **Correctif** : `revoke execute on function public.delete_my_account() from anon;`
 
-### F2 — Pas de contrainte anti-spam sur `price_reports`
+### F2 — Pas de contrainte anti-spam sur `price_reports` — ✅ CORRIGÉ (2026-07-11)
+
+> Contrainte `UNIQUE(price_id, user_id)` ajoutée. Vérifié en transaction annulée : un premier signalement passe, un second signalement du même prix par le même utilisateur échoue avec `duplicate key value violates unique constraint`.
 
 - **Où** : table `price_reports` — seule contrainte : clé primaire (`id`). Aucune contrainte `UNIQUE (price_id, user_id)`, contrairement à `price_ratings` qui en a une.
 - **Risque** : un utilisateur peut signaler plusieurs fois le même prix, gonflant artificiellement la file de modération admin. Pas d'escalade automatique de statut basée sur les signalements (contrairement aux votes), donc impact limité à de la nuisance pour les modérateurs.
 - **Correctif** : `alter table price_reports add constraint price_reports_price_id_user_id_key unique (price_id, user_id);` (nécessite d'adapter le code applicatif si un utilisateur doit pouvoir modifier son signalement plutôt qu'en créer un nouveau).
 
-### F3 — `product_id` modifiable lors de l'édition d'un prix par son propriétaire
+### F3 — `product_id` modifiable lors de l'édition d'un prix par son propriétaire — ✅ CORRIGÉ (2026-07-11)
+
+> `REVOKE UPDATE (product_id) ... FROM authenticated` appliqué. **Régression détectée et corrigée avant déploiement** : `updatePrice()` (`frontend/src/lib/products.ts`) envoyait toujours `product_id` dans son payload (valeur inchangée), et Postgres exige le privilège UPDATE sur une colonne dès qu'elle apparaît dans le `SET`, même à valeur identique — l'édition d'un prix aurait échoué avec `permission denied`. Détecté en reproduisant exactement le payload réel de l'app via simulation SQL avant de considérer le correctif terminé. `updatePrice()` omet désormais `product_id` du payload ; revérifié en SQL que l'édition fonctionne à nouveau et que la modification directe de `product_id` est bien rejetée.
 
 - **Où** : GRANT `UPDATE` du rôle `authenticated` sur `prices` inclut la colonne `product_id`.
 - **Risque** : un utilisateur pourrait, via un appel direct à l'API (hors UI, qui ne propose pas ce champ en édition), réassigner un de ses prix à un autre produit — pollution de données mineure, pas de risque de confidentialité/intégrité au-delà du produit ciblé.
 - **Correctif** : retirer `product_id` du `GRANT UPDATE` scopé à `authenticated` sur `prices` (le déplacement d'un prix vers un autre produit doit passer par une suppression + recréation, pas une édition).
 
-### F4 — "Leaked Password Protection" désactivée (Supabase Auth)
+### F4 — "Leaked Password Protection" désactivée (Supabase Auth) — ⏳ Action manuelle requise
 
-- **Où** : Dashboard Supabase, signalé par l'advisor de sécurité natif.
+- **Où** : Dashboard Supabase → Authentication, signalé par l'advisor de sécurité natif.
 - **Constat** : sans impact réel ici — l'app n'utilise **jamais** l'authentification par mot de passe (uniquement OTP e-mail), donc ce réglage ne s'applique à aucun flux utilisateur actuel. Activation à coût nul si un flux mot de passe est ajouté un jour.
+- **Non corrigeable via SQL/migration** : ce réglage n'est pas stocké dans une table Postgres accessible (vérifié : aucune table de config dans le schéma `auth`), c'est un paramètre de plateforme géré uniquement par le Dashboard ou l'API de gestion Supabase. À activer manuellement : Dashboard → Authentication → Policies (ou Providers → Email) → "Leaked password protection".
 
-### F5 — Dépendances légèrement en retard (non liées à des CVE)
+### F5 — Dépendances légèrement en retard (non liées à des CVE) — ✅ CORRIGÉ (2026-07-11)
 
-- **Où** : `npm outdated` — `@supabase/supabase-js` (2.110.1 → 2.110.2), `typescript` (6.0.3 → 7.0.2, majeure), `prettier`, `@types/node`.
-- **Constat** : `npm audit` ne remonte **aucune vulnérabilité connue** (0 critique/élevée/moyenne/faible sur 478 dépendances). Mise à jour de routine recommandée, pas urgente.
+> `@supabase/supabase-js` 2.110.1 → 2.110.2, `prettier` 3.9.4 → 3.9.5. `typescript` (6.0.3 → 7.0.2, montée de version majeure) volontairement laissé de côté — à traiter séparément avec ses propres tests, pas une mise à jour de routine. `npm audit` toujours à 0 vulnérabilité après mise à jour.
 
 ---
 
@@ -151,11 +159,11 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 2. ~~**[Moyen]** Configurer `file_size_limit` + `allowed_mime_types` sur le bucket `price-photos` — M1.~~ ✅ Corrigé le 2026-07-11.
 3. ~~**[Moyen]** Vider `queryClient` + caches Workbox à la déconnexion — M2.~~ ✅ Corrigé le 2026-07-11.
 4. ~~**[Moyen]** Ajouter les en-têtes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` dans `vercel.json` — M3.~~ ✅ Corrigé le 2026-07-11 (CSP volontairement exclue, à traiter séparément).
-5. **[Moyen]** Vérifier manuellement dans le Dashboard Supabase l'expiration OTP et le rate-limit de `/verify` — M4.
-6. **[Faible]** Revoke `EXECUTE` sur `delete_my_account()` pour `anon` — F1.
-7. **[Faible]** Ajouter une contrainte `UNIQUE(price_id, user_id)` sur `price_reports` — F2.
-8. **[Faible]** Retirer `product_id` du GRANT `UPDATE` authenticated sur `prices` — F3.
-9. **[Faible]** Activer "Leaked Password Protection" dans le Dashboard (coût nul, aucun flux mot de passe actuellement) — F4.
-10. **[Faible]** Mettre à jour `@supabase/supabase-js` et les devDependencies mineures — F5.
+5. **[Moyen]** Vérifier manuellement dans le Dashboard Supabase l'expiration OTP et le rate-limit de `/verify` — M4. *(action manuelle, hors portée des outils utilisés ici)*
+6. ~~**[Faible]** Revoke `EXECUTE` sur `delete_my_account()` pour `anon` — F1.~~ ✅ Corrigé le 2026-07-11.
+7. ~~**[Faible]** Ajouter une contrainte `UNIQUE(price_id, user_id)` sur `price_reports` — F2.~~ ✅ Corrigé le 2026-07-11.
+8. ~~**[Faible]** Retirer `product_id` du GRANT `UPDATE` authenticated sur `prices` — F3.~~ ✅ Corrigé le 2026-07-11 (+ correctif frontend associé, régression détectée avant déploiement).
+9. **[Faible]** Activer "Leaked Password Protection" dans le Dashboard (coût nul, aucun flux mot de passe actuellement) — F4. *(action manuelle, Dashboard uniquement)*
+10. ~~**[Faible]** Mettre à jour `@supabase/supabase-js` et les devDependencies mineures — F5.~~ ✅ Corrigé le 2026-07-11.
 
-Aucun correctif n'a été appliqué. En attente de validation avant intervention.
+**9 des 10 points corrigés et déployés.** Seul F4 (Leaked Password Protection) reste à faire, et uniquement via le Dashboard Supabase — aucun outil disponible ici ne permet de le modifier par API/SQL.
