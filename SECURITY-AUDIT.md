@@ -54,7 +54,9 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
   where id = 'price-photos';
   ```
 
-### M2 — Pas de purge du cache local à la déconnexion (fuite de données sur appareil partagé)
+### M2 — Pas de purge du cache local à la déconnexion (fuite de données sur appareil partagé) — ✅ CORRIGÉ (2026-07-11)
+
+> `signOut()` (`frontend/src/lib/profile.ts`) vide désormais `queryClient`, supprime la clé `localStorage` persistée (`gabonprice:query-cache`) et efface les caches Workbox (`supabase-api`, `images`) après la déconnexion Supabase réussie.
 
 - **Où** : `frontend/src/lib/profile.ts:9-12` (`signOut()`), `frontend/src/main.tsx:26-31` (`persistQueryClient`, clé `gabonprice:query-cache`, `maxAge: 24h`), `vite.config.ts:52-64` (cache Workbox `supabase-api`, `maxAgeSeconds: 24h`).
 - **Risque** : `signOut()` n'appelle que `supabase.auth.signOut()`, qui nettoie uniquement le jeton de session Supabase. Il ne vide ni le cache TanStack Query persisté en `localStorage`, ni le cache HTTP Workbox. Ces caches contiennent des données de l'utilisateur précédent (profil incluant l'email — cf. `fetchMyProfile`/`get_my_profile()` mis en cache par `useQuery`, historique de contributions, votes). Sur un appareil partagé (PWA installée sur un téléphone familial, ordinateur public), l'utilisateur suivant peut voir apparaître brièvement ces données au chargement, et un accès aux DevTools/`localStorage` du navigateur les expose intégralement pendant 24h.
@@ -145,7 +147,7 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 
 1. ~~**[Élevé]** Restreindre les GRANTs `anon` (INSERT/UPDATE) sur `prices`, `price_ratings`, `price_reports`, `products`, `users`, `price_history` — E1.~~ ✅ Corrigé le 2026-07-11.
 2. ~~**[Moyen]** Configurer `file_size_limit` + `allowed_mime_types` sur le bucket `price-photos` — M1.~~ ✅ Corrigé le 2026-07-11.
-3. **[Moyen]** Vider `queryClient` + caches Workbox à la déconnexion — M2.
+3. ~~**[Moyen]** Vider `queryClient` + caches Workbox à la déconnexion — M2.~~ ✅ Corrigé le 2026-07-11.
 4. **[Moyen]** Ajouter les en-têtes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` dans `vercel.json` — M3.
 5. **[Moyen]** Vérifier manuellement dans le Dashboard Supabase l'expiration OTP et le rate-limit de `/verify` — M4.
 6. **[Faible]** Revoke `EXECUTE` sur `delete_my_account()` pour `anon` — F1.
