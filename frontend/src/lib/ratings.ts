@@ -32,15 +32,15 @@ export async function setPriceRating(
   return rating
 }
 
-export async function fetchMyReportedPriceIds(priceIds: string[], userId: string): Promise<Set<string>> {
-  if (priceIds.length === 0) return new Set()
+export async function fetchMyReportedPriceIds(priceIds: string[], userId: string): Promise<string[]> {
+  if (priceIds.length === 0) return []
   const { data, error } = await supabase
     .from('price_reports')
     .select('price_id')
     .eq('user_id', userId)
     .in('price_id', priceIds)
   if (error) throw error
-  return new Set(data.map((r) => r.price_id))
+  return data.map((r) => r.price_id)
 }
 
 export async function reportPrice(priceId: string, userId: string, reason: string) {

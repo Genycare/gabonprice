@@ -321,7 +321,7 @@ export function ProductDetailPage() {
             best={i === 0}
             isOwner={entry.user_id === session?.user.id}
             myRating={myRatings?.[entry.id]}
-            reported={reportedIds?.has(entry.id) ?? false}
+            reported={reportedIds?.includes(entry.id) ?? false}
             reportOpen={reportOpenId === entry.id}
             onDelete={handleDelete}
             onVote={handleVote}
