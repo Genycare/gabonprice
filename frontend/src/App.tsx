@@ -23,8 +23,14 @@ const ConfirmationPage = lazy(() =>
 )
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
 const AdminPage = lazy(() => import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })))
+const PrivacyPolicyPage = lazy(() =>
+  import('./pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })),
+)
+const LegalNoticePage = lazy(() =>
+  import('./pages/LegalNoticePage').then((m) => ({ default: m.LegalNoticePage })),
+)
 
-const ROUTES_WITHOUT_NAV = ['/connexion', '/verification', '/confirmation', '/admin']
+const ROUTES_WITHOUT_NAV = ['/connexion', '/verification', '/confirmation', '/admin', '/confidentialite', '/mentions-legales']
 
 function App() {
   const location = useLocation()
@@ -45,6 +51,8 @@ function App() {
           <Routes>
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/verification" element={<OtpVerificationPage />} />
+            <Route path="/confidentialite" element={<PrivacyPolicyPage />} />
+            <Route path="/mentions-legales" element={<LegalNoticePage />} />
             <Route element={<RequireAuth />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/recherche" element={<SearchPage />} />

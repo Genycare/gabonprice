@@ -155,7 +155,17 @@ export function ProfilePage() {
         </button>
       </div>
 
-      <div className="py-5 text-center text-[11px] text-muted">GabonPrice v1.0.0</div>
+      <div className="flex flex-col items-center gap-2 py-5 text-center text-[11px] text-muted">
+        <div className="flex gap-3">
+          <Link to="/confidentialite" className="underline">
+            Confidentialité
+          </Link>
+          <Link to="/mentions-legales" className="underline">
+            Mentions légales
+          </Link>
+        </div>
+        <div>GabonPrice v1.0.0</div>
+      </div>
     </div>
   )
 }

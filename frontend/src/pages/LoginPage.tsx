@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { supabase } from '../lib/supabase'
 
@@ -125,6 +125,14 @@ export function LoginPage() {
           </div>
         ))}
       </div>
+
+      <p className="px-4 pb-5 text-center text-[11px] leading-snug text-muted">
+        En continuant, vous acceptez notre{' '}
+        <Link to="/confidentialite" className="underline">
+          politique de confidentialité
+        </Link>
+        .
+      </p>
 
       <div className="h-8 w-full" style={{ backgroundImage: 'url(/hero/login-pattern.jpg)', backgroundRepeat: 'repeat-x', backgroundSize: 'auto 100%' }} />
     </div>
