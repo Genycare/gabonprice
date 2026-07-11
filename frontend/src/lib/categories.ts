@@ -1,12 +1,24 @@
 export const CATEGORY_EMOJI: Record<string, string> = {
   Alimentaire: '🥖',
+  Poissonnerie: '🐟',
+  Boucherie: '🥩',
+  'Fruits et légumes': '🥦',
+  'Produits laitiers': '🥛',
+  'Matières grasses': '🧈',
+  'Produits sucrés': '🍬',
+  Dessert: '🍰',
+  Boissons: '🥤',
+  'Épicerie & Céréales': '🌾',
   'Gaz & Énergie': '🔥',
   Construction: '🧱',
   Hygiène: '🧴',
+  'Beauté & Cosmétique': '💄',
   Électronique: '📱',
   Pharmacie: '💊',
+  'Bébé & Puériculture': '🍼',
   Vêtements: '👕',
   Carburant: '⛽',
+  'Papeterie & Fournitures scolaires': '✏️',
 }
 
 export function categoryEmoji(category: string): string {
