@@ -139,7 +139,7 @@ export function OtpVerificationPage() {
 
   return (
     <div className="flex min-h-svh flex-col bg-white">
-      <img src="/hero/auth-hero.png" alt="" className="aspect-[1157/747] w-full object-cover" />
+      <img src="/hero/otp-hero.jpg" alt="" className="aspect-[1086/478] w-full object-cover" />
 
       <form
         onSubmit={handleSubmit}
