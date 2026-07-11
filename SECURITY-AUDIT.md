@@ -62,7 +62,9 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 - **Risque** : `signOut()` n'appelle que `supabase.auth.signOut()`, qui nettoie uniquement le jeton de session Supabase. Il ne vide ni le cache TanStack Query persisté en `localStorage`, ni le cache HTTP Workbox. Ces caches contiennent des données de l'utilisateur précédent (profil incluant l'email — cf. `fetchMyProfile`/`get_my_profile()` mis en cache par `useQuery`, historique de contributions, votes). Sur un appareil partagé (PWA installée sur un téléphone familial, ordinateur public), l'utilisateur suivant peut voir apparaître brièvement ces données au chargement, et un accès aux DevTools/`localStorage` du navigateur les expose intégralement pendant 24h.
 - **Correctif recommandé** : dans `signOut()`, après `supabase.auth.signOut()`, appeler `queryClient.clear()` et `caches.delete('supabase-api')` (ou `caches.keys()` + suppression complète), et supprimer explicitement la clé `localStorage.removeItem('gabonprice:query-cache')`.
 
-### M3 — En-têtes de sécurité HTTP absents
+### M3 — En-têtes de sécurité HTTP absents — ✅ CORRIGÉ (2026-07-11)
+
+> `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` (geolocation autorisée pour AddPricePage, caméra/micro désactivés) ajoutés dans `vercel.json`. La CSP n'a volontairement pas été ajoutée dans ce correctif : elle nécessite de lister précisément les origines autorisées (Supabase, Sentry, `data:`/`blob:` pour la compression photo côté client) et d'être testée séparément pour ne pas casser l'app.
 
 - **Où** : `frontend/vercel.json` (aucun bloc `headers`) ; confirmé en production via `curl -I https://gabonprice.vercel.app/` — seul `Strict-Transport-Security` est présent (ajouté par défaut par Vercel), aucun `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`/`frame-ancestors`, ni `Referrer-Policy`.
 - **Risque** : pas d'exploitation directe confirmée (aucun XSS trouvé dans le code React, qui échappe par défaut), mais absence de défense en profondeur : pas de protection contre le MIME-sniffing, pas de restriction sur l'intégration en iframe (clickjacking), pas de politique de referrer pour limiter la fuite d'URL vers des sites tiers.
@@ -148,7 +150,7 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 1. ~~**[Élevé]** Restreindre les GRANTs `anon` (INSERT/UPDATE) sur `prices`, `price_ratings`, `price_reports`, `products`, `users`, `price_history` — E1.~~ ✅ Corrigé le 2026-07-11.
 2. ~~**[Moyen]** Configurer `file_size_limit` + `allowed_mime_types` sur le bucket `price-photos` — M1.~~ ✅ Corrigé le 2026-07-11.
 3. ~~**[Moyen]** Vider `queryClient` + caches Workbox à la déconnexion — M2.~~ ✅ Corrigé le 2026-07-11.
-4. **[Moyen]** Ajouter les en-têtes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` dans `vercel.json` — M3.
+4. ~~**[Moyen]** Ajouter les en-têtes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` dans `vercel.json` — M3.~~ ✅ Corrigé le 2026-07-11 (CSP volontairement exclue, à traiter séparément).
 5. **[Moyen]** Vérifier manuellement dans le Dashboard Supabase l'expiration OTP et le rate-limit de `/verify` — M4.
 6. **[Faible]** Revoke `EXECUTE` sur `delete_my_account()` pour `anon` — F1.
 7. **[Faible]** Ajouter une contrainte `UNIQUE(price_id, user_id)` sur `price_reports` — F2.
