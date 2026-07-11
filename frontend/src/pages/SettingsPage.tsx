@@ -71,19 +71,23 @@ export function SettingsPage() {
       <div className="sticky top-0 z-40 flex items-center gap-3.5 border-b border-line bg-white px-4.5 py-4">
         <button
           onClick={() => navigate(-1)}
+          aria-label="Retour"
           className="flex h-9.5 w-9.5 flex-shrink-0 items-center justify-center rounded-[10px] border border-line bg-app-bg"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-ink">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <div className="flex-1 text-[17px] font-extrabold text-ink">Paramètres</div>
+        <h1 className="flex-1 text-[17px] font-extrabold text-ink">Paramètres</h1>
       </div>
 
       <form onSubmit={handleSave} className="flex flex-col gap-5 px-4.5 py-5">
         <div>
-          <div className="mb-2 text-[13px] font-bold text-ink">Nom d'utilisateur</div>
+          <label htmlFor="settings-username" className="mb-2 block text-[13px] font-bold text-ink">
+            Nom d'utilisateur
+          </label>
           <input
+            id="settings-username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -92,8 +96,11 @@ export function SettingsPage() {
         </div>
 
         <div>
-          <div className="mb-2 text-[13px] font-bold text-ink">Province préférée</div>
+          <label htmlFor="settings-province" className="mb-2 block text-[13px] font-bold text-ink">
+            Province préférée
+          </label>
           <select
+            id="settings-province"
             value={preferredProvince}
             onChange={(e) => setPreferredProvince(e.target.value)}
             className="w-full rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink focus:border-brand-green-vivid focus:outline-none"
@@ -108,8 +115,12 @@ export function SettingsPage() {
         </div>
 
         <div>
-          <div className="mb-2 text-[13px] font-bold text-ink">Email</div>
-          <div className="w-full rounded-2xl border-[1.5px] border-line bg-app-bg px-4 py-3.5 text-[15px] text-muted">{profile.email}</div>
+          <div id="settings-email-label" className="mb-2 text-[13px] font-bold text-ink">
+            Email
+          </div>
+          <div aria-labelledby="settings-email-label" className="w-full rounded-2xl border-[1.5px] border-line bg-app-bg px-4 py-3.5 text-[15px] text-muted">
+            {profile.email}
+          </div>
         </div>
 
         {saveMessage && <p className="text-sm text-muted">{saveMessage}</p>}

@@ -256,6 +256,7 @@ export function AddPricePage() {
       <div className="sticky top-0 z-40 flex items-center gap-3.5 border-b border-line bg-white px-4.5 py-4">
         <Link
           to="/"
+          aria-label="Retour"
           className="flex h-9.5 w-9.5 flex-shrink-0 items-center justify-center rounded-[10px] border border-line bg-app-bg"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-ink">
@@ -263,14 +264,14 @@ export function AddPricePage() {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </Link>
-        <div className="flex-1 text-[17px] font-extrabold text-ink">{editPriceId ? 'Modifier le prix' : 'Ajouter un prix'}</div>
+        <h1 className="flex-1 text-[17px] font-extrabold text-ink">{editPriceId ? 'Modifier le prix' : 'Ajouter un prix'}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-4.5 py-5">
         <div>
-          <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
+          <label htmlFor="product-search" className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Produit <span className="text-brand-green-vivid">*</span>
-          </div>
+          </label>
 
           {selectedProduct && !showProductSearch ? (
             <div className="flex items-center gap-3.5 rounded-2xl border-[1.5px] border-line bg-white px-4 py-3">
@@ -281,13 +282,14 @@ export function AddPricePage() {
                 <div className="text-[15px] font-bold text-ink">{selectedProduct.name}</div>
                 <div className="text-xs text-muted">{selectedProduct.category}</div>
               </div>
-              <button type="button" onClick={() => setShowProductSearch(true)} className="text-xs font-bold text-brand-green-vivid">
+              <button type="button" onClick={() => setShowProductSearch(true)} className="min-h-11 text-xs font-bold text-brand-green-vivid">
                 Changer
               </button>
             </div>
           ) : (
             <div className="relative">
               <input
+                id="product-search"
                 type="text"
                 autoFocus
                 value={productQuery}
@@ -306,7 +308,7 @@ export function AddPricePage() {
                         setShowProductSearch(false)
                         setProductQuery('')
                       }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-app-bg"
+                      className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-app-bg"
                     >
                       <span className="text-lg">{categoryEmoji(p.category)}</span>
                       <span className="text-sm font-semibold text-ink">{p.name}</span>
@@ -326,7 +328,7 @@ export function AddPricePage() {
                         key={label}
                         type="button"
                         onClick={() => setNewProductCategory(label)}
-                        className={`rounded-xl border-[1.5px] px-1 py-2.5 text-center ${
+                        className={`min-h-11 rounded-xl border-[1.5px] px-1 py-2.5 text-center ${
                           newProductCategory === label ? 'border-brand-green-vivid bg-brand-green-light' : 'border-line bg-white'
                         }`}
                       >
@@ -352,11 +354,12 @@ export function AddPricePage() {
         </div>
 
         <div>
-          <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
+          <label htmlFor="price-amount" className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Prix payé <span className="text-brand-green-vivid">*</span>
-          </div>
+          </label>
           <div className="relative">
             <input
+              id="price-amount"
               type="number"
               inputMode="numeric"
               placeholder="0"
@@ -370,10 +373,11 @@ export function AddPricePage() {
         </div>
 
         <div>
-          <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
+          <label htmlFor="store-name" className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Magasin <span className="text-brand-green-vivid">*</span>
-          </div>
+          </label>
           <input
+            id="store-name"
             type="text"
             placeholder="Ex : Mbolo, Cecado, Marché Mont-Bouët..."
             value={storeName}
@@ -384,7 +388,7 @@ export function AddPricePage() {
         </div>
 
         <div>
-          <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
+          <div id="location-label" className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Localisation <span className="text-brand-green-vivid">*</span>
           </div>
 
@@ -408,6 +412,8 @@ export function AddPricePage() {
 
           <div className="grid grid-cols-2 gap-2.5">
             <select
+              aria-labelledby="location-label"
+              aria-label="Province"
               value={province}
               onChange={(e) => {
                 setProvince(e.target.value)
@@ -423,6 +429,8 @@ export function AddPricePage() {
               ))}
             </select>
             <select
+              aria-labelledby="location-label"
+              aria-label="Ville"
               value={city}
               onChange={(e) => setCity(e.target.value)}
               disabled={!province}
@@ -437,6 +445,7 @@ export function AddPricePage() {
             </select>
             <input
               type="text"
+              aria-label="Quartier"
               placeholder="Quartier (ex : Glass, Akébé, Nombakélé)"
               value={neighborhood}
               onChange={(e) => setNeighborhood(e.target.value)}
@@ -449,10 +458,11 @@ export function AddPricePage() {
         </div>
 
         <div>
-          <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
+          <label htmlFor="purchase-date" className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-ink">
             Date d'achat <span className="text-brand-green-vivid">*</span>
-          </div>
+          </label>
           <input
+            id="purchase-date"
             type="date"
             max={todayIso()}
             value={purchaseDate}

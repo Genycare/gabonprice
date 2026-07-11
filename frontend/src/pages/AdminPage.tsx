@@ -24,7 +24,7 @@ function ActionButton({ tone, onClick, children }: { tone: 'restore' | 'delete' 
     ban: 'border-ink bg-ink text-white',
   }[tone]
   return (
-    <button onClick={onClick} className={`flex-1 rounded-[11px] border py-2.5 text-[13px] font-bold ${toneClass}`}>
+    <button onClick={onClick} className={`min-h-11 flex-1 rounded-[11px] border py-2.5 text-[13px] font-bold ${toneClass}`}>
       {children}
     </button>
   )
@@ -188,7 +188,7 @@ export function AdminPage() {
       <div className="bg-gradient-to-br from-brand-green to-brand-blue px-4.5 pb-5 pt-5.5 text-white">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <div className="text-[17px] font-extrabold">Administration</div>
+            <h1 className="text-[17px] font-extrabold">Administration</h1>
             <div className="text-[11px] font-semibold opacity-85">GabonPrice</div>
           </div>
           <div className="rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-extrabold tracking-wide">ADMIN</div>
@@ -221,7 +221,7 @@ export function AdminPage() {
           <button
             key={t.value}
             onClick={() => setTab(t.value)}
-            className={`flex-1 rounded-xl border py-2.5 text-[13px] font-bold ${
+            className={`min-h-11 flex-1 rounded-xl border py-2.5 text-[13px] font-bold ${
               tab === t.value ? 'border-brand-green bg-brand-green text-white' : 'border-line bg-white text-muted'
             }`}
           >

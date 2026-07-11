@@ -42,7 +42,7 @@ export function ProfilePage() {
         <div className="mx-auto mb-3 flex h-19 w-19 items-center justify-center rounded-full border-[3px] border-white/40 bg-white/20 text-[28px] font-extrabold">
           {initials(profile.username)}
         </div>
-        <div className="mb-1 text-[19px] font-extrabold">{profile.username}</div>
+        <h1 className="mb-1 text-[19px] font-extrabold">{profile.username}</h1>
         <div className="mb-2.5 text-[13px] text-white/85">{profile.email}</div>
         <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.25 text-xs font-bold">
           ⭐ {profile.level}

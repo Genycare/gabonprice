@@ -1,21 +1,28 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { BottomNav } from './components/BottomNav'
 import { OfflineBanner } from './components/OfflineBanner'
 import { RequireAuth } from './components/RequireAuth'
 import { RequireAdmin } from './components/RequireAdmin'
 import { syncOfflinePrices } from './lib/offlineQueue'
-import { HomePage } from './pages/HomePage'
-import { SearchPage } from './pages/SearchPage'
-import { AddPricePage } from './pages/AddPricePage'
-import { HistoryPage } from './pages/HistoryPage'
-import { ProfilePage } from './pages/ProfilePage'
-import { ProductDetailPage } from './pages/ProductDetailPage'
-import { LoginPage } from './pages/LoginPage'
-import { OtpVerificationPage } from './pages/OtpVerificationPage'
-import { ConfirmationPage } from './pages/ConfirmationPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { AdminPage } from './pages/AdminPage'
+
+const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })))
+const SearchPage = lazy(() => import('./pages/SearchPage').then((m) => ({ default: m.SearchPage })))
+const AddPricePage = lazy(() => import('./pages/AddPricePage').then((m) => ({ default: m.AddPricePage })))
+const HistoryPage = lazy(() => import('./pages/HistoryPage').then((m) => ({ default: m.HistoryPage })))
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
+const ProductDetailPage = lazy(() =>
+  import('./pages/ProductDetailPage').then((m) => ({ default: m.ProductDetailPage })),
+)
+const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })))
+const OtpVerificationPage = lazy(() =>
+  import('./pages/OtpVerificationPage').then((m) => ({ default: m.OtpVerificationPage })),
+)
+const ConfirmationPage = lazy(() =>
+  import('./pages/ConfirmationPage').then((m) => ({ default: m.ConfirmationPage })),
+)
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+const AdminPage = lazy(() => import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })))
 
 const ROUTES_WITHOUT_NAV = ['/connexion', '/verification', '/confirmation', '/admin']
 
@@ -33,23 +40,27 @@ function App() {
   return (
     <div className={showBottomNav ? 'pb-16' : ''}>
       <OfflineBanner />
-      <Routes>
-        <Route path="/connexion" element={<LoginPage />} />
-        <Route path="/verification" element={<OtpVerificationPage />} />
-        <Route element={<RequireAuth />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/recherche" element={<SearchPage />} />
-          <Route path="/produit/:id" element={<ProductDetailPage />} />
-          <Route path="/ajouter" element={<AddPricePage />} />
-          <Route path="/confirmation" element={<ConfirmationPage />} />
-          <Route path="/historique" element={<HistoryPage />} />
-          <Route path="/profil" element={<ProfilePage />} />
-          <Route path="/parametres" element={<SettingsPage />} />
-          <Route element={<RequireAdmin />}>
-            <Route path="/admin" element={<AdminPage />} />
-          </Route>
-        </Route>
-      </Routes>
+      <main>
+        <Suspense fallback={<div className="flex min-h-svh items-center justify-center text-sm text-muted">Chargement...</div>}>
+          <Routes>
+            <Route path="/connexion" element={<LoginPage />} />
+            <Route path="/verification" element={<OtpVerificationPage />} />
+            <Route element={<RequireAuth />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/recherche" element={<SearchPage />} />
+              <Route path="/produit/:id" element={<ProductDetailPage />} />
+              <Route path="/ajouter" element={<AddPricePage />} />
+              <Route path="/confirmation" element={<ConfirmationPage />} />
+              <Route path="/historique" element={<HistoryPage />} />
+              <Route path="/profil" element={<ProfilePage />} />
+              <Route path="/parametres" element={<SettingsPage />} />
+              <Route element={<RequireAdmin />}>
+                <Route path="/admin" element={<AdminPage />} />
+              </Route>
+            </Route>
+          </Routes>
+        </Suspense>
+      </main>
       {showBottomNav && <BottomNav />}
     </div>
   )

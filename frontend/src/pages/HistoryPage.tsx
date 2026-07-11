@@ -91,13 +91,14 @@ export function HistoryPage() {
       <div className="sticky top-0 z-40 flex items-center gap-3.5 border-b border-line bg-white px-4.5 py-4">
         <button
           onClick={() => navigate(-1)}
+          aria-label="Retour"
           className="flex h-9.5 w-9.5 flex-shrink-0 items-center justify-center rounded-[10px] border border-line bg-app-bg"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-ink">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <div className="flex-1 text-[17px] font-extrabold text-ink">Mes contributions</div>
+        <h1 className="flex-1 text-[17px] font-extrabold text-ink">Mes contributions</h1>
       </div>
 
       <div className="flex gap-2 px-4.5 pt-3.5">
@@ -111,7 +112,7 @@ export function HistoryPage() {
           <button
             key={value}
             onClick={() => setTab(value)}
-            className={`rounded-full border px-3.5 py-2 text-[13px] font-bold ${
+            className={`min-h-11 rounded-full border px-3.5 py-2 text-[13px] font-bold ${
               tab === value ? 'border-brand-green-light bg-brand-green-light text-brand-green' : 'border-line bg-white text-muted'
             }`}
           >

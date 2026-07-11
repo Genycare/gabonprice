@@ -100,6 +100,7 @@ export function LoginPage() {
               type="email"
               inputMode="email"
               autoComplete="email"
+              aria-label="Adresse email"
               placeholder="exemple@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

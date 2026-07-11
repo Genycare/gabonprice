@@ -79,7 +79,12 @@ function PriceCard({
 
       <div className="mb-3 flex items-center gap-2.5 border-y border-line py-3">
         {entry.photo_url ? (
-          <img src={entry.photo_url} alt="Ticket de caisse" className="h-11 w-11 flex-shrink-0 rounded-[10px] object-cover" />
+          <img
+            src={entry.photo_url}
+            alt="Ticket de caisse"
+            loading="lazy"
+            className="h-11 w-11 flex-shrink-0 rounded-[10px] object-cover"
+          />
         ) : (
           <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#F3F4F6] to-[#E5E7EB] text-xl">
             🧾
@@ -103,7 +108,9 @@ function PriceCard({
           <button
             onClick={() => onVote(entry.id, 1)}
             disabled={isOwner}
-            className={`flex items-center gap-1.5 rounded-[10px] border px-3 py-1.75 text-sm font-bold disabled:opacity-50 ${
+            aria-label="Utile"
+            aria-pressed={myRating === 1}
+            className={`flex min-h-11 items-center gap-1.5 rounded-[10px] border px-3 py-1.75 text-sm font-bold disabled:opacity-50 ${
               myRating === 1
                 ? 'border-brand-green-vivid bg-brand-green-light text-brand-green-vivid'
                 : 'border-line bg-app-bg text-muted hover:border-brand-green-vivid hover:text-brand-green-vivid'
@@ -118,7 +125,9 @@ function PriceCard({
           <button
             onClick={() => onVote(entry.id, -1)}
             disabled={isOwner}
-            className={`flex items-center gap-1.5 rounded-[10px] border px-3 py-1.75 text-sm font-bold disabled:opacity-50 ${
+            aria-label="Pas utile"
+            aria-pressed={myRating === -1}
+            className={`flex min-h-11 items-center gap-1.5 rounded-[10px] border px-3 py-1.75 text-sm font-bold disabled:opacity-50 ${
               myRating === -1
                 ? 'border-[#FCA5A5] bg-[#FEE2E2] text-[#B91C1C]'
                 : 'border-line bg-app-bg text-muted hover:border-[#FCA5A5] hover:text-[#B91C1C]'
@@ -253,13 +262,14 @@ export function ProductDetailPage() {
       <div className="sticky top-0 z-40 flex items-center gap-3.5 border-b border-line bg-white px-4.5 py-4">
         <button
           onClick={() => navigate(-1)}
+          aria-label="Retour"
           className="flex h-9.5 w-9.5 flex-shrink-0 items-center justify-center rounded-[10px] border border-line bg-app-bg"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-ink">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <div className="flex-1 text-[17px] font-extrabold text-ink">Détail du produit</div>
+        <h1 className="flex-1 text-[17px] font-extrabold text-ink">Détail du produit</h1>
       </div>
 
       {product && (

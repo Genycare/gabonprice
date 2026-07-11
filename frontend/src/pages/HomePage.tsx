@@ -39,9 +39,9 @@ export function HomePage() {
                 maskPosition: 'center',
               }}
             />
-            <div className="text-xl font-extrabold tracking-tight text-brand-blue">
+            <h1 className="text-xl font-extrabold tracking-tight text-brand-blue">
               Gabon<span className="text-brand-green-vivid">Price</span>
-            </div>
+            </h1>
           </div>
           <button className="flex items-center gap-1.5 rounded-full bg-brand-green-light px-3 py-2 text-sm font-bold text-brand-green">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">

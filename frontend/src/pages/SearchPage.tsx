@@ -42,6 +42,7 @@ export function SearchPage() {
   return (
     <div>
       <header className="sticky top-0 z-40 border-b border-line bg-white px-4.5 pb-3.5 pt-4">
+        <h1 className="sr-only">Recherche</h1>
         <div className="mb-3 flex items-center gap-2.5 rounded-2xl border-[1.5px] border-line bg-app-bg px-3.5 py-3 focus-within:border-brand-green-vivid focus-within:shadow-[0_0_0_4px_rgba(22,163,74,0.1)]">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-5 w-5 flex-shrink-0 text-muted">
             <circle cx="11" cy="11" r="8" />
@@ -50,6 +51,7 @@ export function SearchPage() {
           <input
             type="text"
             autoFocus
+            aria-label="Rechercher un produit"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Rechercher un produit..."
@@ -59,6 +61,7 @@ export function SearchPage() {
         {isOnline ? (
           <div className="grid grid-cols-2 gap-2.5">
             <select
+              aria-label="Filtrer par province"
               value={province}
               onChange={(e) => {
                 setProvince(e.target.value)
@@ -76,6 +79,7 @@ export function SearchPage() {
               ))}
             </select>
             <select
+              aria-label="Filtrer par ville"
               value={city}
               onChange={(e) => setCity(e.target.value)}
               disabled={!province}

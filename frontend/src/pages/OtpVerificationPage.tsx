@@ -164,6 +164,7 @@ export function OtpVerificationPage() {
               type="tel"
               inputMode="numeric"
               maxLength={1}
+              aria-label={`Chiffre ${i + 1} sur 6`}
               value={digit}
               onChange={(e) => updateDigit(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
