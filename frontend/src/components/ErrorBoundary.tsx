@@ -33,6 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             Recharger
           </button>
+          <p className="max-w-xs break-words text-xs text-muted/70">{this.state.error.message}</p>
         </div>
       )
     }
