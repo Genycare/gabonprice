@@ -32,8 +32,12 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         runtimeCaching: [
           {
+            // StaleWhileRevalidate (not CacheFirst): still serves instantly from
+            // cache for offline support, but revalidates in the background so
+            // updated assets (e.g. hero images) don't stay stale for the full
+            // 30-day expiration window.
             urlPattern: ({ request }) => request.destination === 'image',
-            handler: 'CacheFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'images',
               expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
