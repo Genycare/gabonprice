@@ -14,6 +14,13 @@ const EnvelopeIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const DollarIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </svg>
+)
+
 export function LoginPage() {
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -46,26 +53,35 @@ export function LoginPage() {
 
   return (
     <div className="relative min-h-svh bg-white">
-      <div className="relative w-full" style={{ aspectRatio: '1086 / 1130' }}>
+      <div className="relative w-full" style={{ aspectRatio: '1086 / 1449' }}>
         <img src="/hero/login-bg.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
+
+        {/* Recouvre le 3e repère "Achats sécurisés" bake dans la photo par "Économisez au quotidien" */}
+        <div className="absolute z-[8] flex flex-col gap-0.5 bg-white" style={{ top: '82%', left: '67.6%', width: '31%', height: '10.5%' }}>
+          <div className="flex items-start gap-1">
+            <DollarIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-brand-green-vivid" />
+            <div className="text-[11px] font-extrabold leading-tight text-ink">Économisez au quotidien</div>
+          </div>
+          <div className="text-[10px] leading-tight text-muted">Trouvez le meilleur prix avant d'acheter.</div>
+        </div>
 
         <form
           onSubmit={handleSubmit}
-          className="absolute z-10 flex flex-col justify-center rounded-[26px] bg-white px-6 py-6 shadow-[0_10px_40px_rgba(0,0,0,0.15)]"
-          style={{ top: '60.52%', left: '13.1%', width: '73.8%' }}
+          className="absolute z-10 flex flex-col justify-center rounded-[20px] bg-white px-4 py-4 shadow-[0_10px_40px_rgba(0,0,0,0.15)]"
+          style={{ top: '47.2%', left: '13.1%', width: '73.8%' }}
         >
-          <div className="mb-5 flex items-center gap-3.5">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[22%] bg-brand-green-light">
-              <EnvelopeIcon className="h-6 w-6 text-brand-green-vivid" />
+          <div className="mb-3 flex items-center gap-2.5">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[22%] bg-brand-green-light">
+              <EnvelopeIcon className="h-4.5 w-4.5 text-brand-green-vivid" />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight text-ink">Entrez votre email</h1>
-              <p className="mt-1 text-sm text-muted">Nous vous enverrons un code pour continuer</p>
+              <h1 className="text-sm font-bold leading-tight text-ink">Entrez votre email</h1>
+              <p className="mt-0.5 text-xs leading-tight text-muted">Nous vous enverrons un code pour continuer</p>
             </div>
           </div>
 
-          <div className="mb-4 flex items-center gap-3 rounded-2xl border-[1.5px] border-line px-4">
-            <EnvelopeIcon className="h-5 w-5 flex-shrink-0 text-muted" />
+          <div className="mb-3 flex items-center gap-2 rounded-xl border-[1.5px] border-line px-3">
+            <EnvelopeIcon className="h-4 w-4 flex-shrink-0 text-muted" />
             <input
               type="email"
               inputMode="email"
@@ -73,11 +89,11 @@ export function LoginPage() {
               placeholder="exemple@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="min-w-0 flex-1 border-none bg-transparent py-3 text-base text-ink placeholder:text-[#9CA3AF] focus:outline-none"
+              className="min-w-0 flex-1 border-none bg-transparent py-2 text-sm text-ink placeholder:text-[#9CA3AF] focus:outline-none"
             />
           </div>
 
-          {error && <p className="mb-4 -mt-2 text-sm text-red-600">{error}</p>}
+          {error && <p className="mb-2 -mt-1 text-xs text-red-600">{error}</p>}
 
           <Button type="submit" disabled={!isValidEmail(email) || isSubmitting} className="w-full">
             {isSubmitting ? 'Envoi...' : 'Recevoir le code'}
