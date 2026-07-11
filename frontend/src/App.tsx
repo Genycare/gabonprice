@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { BottomNav } from './components/BottomNav'
 import { OfflineBanner } from './components/OfflineBanner'
+import { IosInstallPrompt } from './components/IosInstallPrompt'
 import { RequireAuth } from './components/RequireAuth'
 import { RequireAdmin } from './components/RequireAdmin'
 import { syncOfflinePrices } from './lib/offlineQueue'
@@ -46,6 +47,7 @@ function App() {
   return (
     <div className={showBottomNav ? 'pb-16' : ''}>
       <OfflineBanner />
+      <IosInstallPrompt />
       <main>
         <Suspense fallback={<div className="flex min-h-svh items-center justify-center text-sm text-muted">Chargement...</div>}>
           <Routes>

@@ -16,6 +16,17 @@
   --radius-card-lg: 22px;
 
   --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+
+  --animate-gp-slide-up: gpSlideUp 0.35s ease-out;
+}
+
+@keyframes gpSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
