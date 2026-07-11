@@ -3,13 +3,14 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   createPrice,
+  createProduct,
   fetchPrice,
   fetchProduct,
   fetchProducts,
   updatePrice,
   type Product,
 } from '../lib/products'
-import { categoryEmoji } from '../lib/categories'
+import { CATEGORY_EMOJI, categoryEmoji } from '../lib/categories'
 import { priceFormSchema } from '../lib/priceSchema'
 import { PROVINCES, CITIES_BY_PROVINCE } from '../lib/locations'
 import { detectLocation } from '../lib/geolocation'
@@ -34,6 +35,9 @@ export function AddPricePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [productQuery, setProductQuery] = useState('')
   const [showProductSearch, setShowProductSearch] = useState(!editPriceId)
+  const [newProductCategory, setNewProductCategory] = useState('')
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false)
+  const [createProductError, setCreateProductError] = useState<string | null>(null)
 
   const [amount, setAmount] = useState('')
   const [storeName, setStoreName] = useState('')
@@ -119,6 +123,24 @@ export function AddPricePage() {
     setPhotoFile(null)
     setPhotoPreview(null)
     setPhotoUrl(null)
+  }
+
+  async function handleCreateProduct() {
+    const name = productQuery.trim()
+    if (!name || !newProductCategory) return
+    setCreateProductError(null)
+    setIsCreatingProduct(true)
+    try {
+      const product = await createProduct(name, newProductCategory)
+      setSelectedProduct(product)
+      setShowProductSearch(false)
+      setProductQuery('')
+      setNewProductCategory('')
+    } catch {
+      setCreateProductError("Impossible de créer ce produit. Réessayez.")
+    } finally {
+      setIsCreatingProduct(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -273,9 +295,9 @@ export function AddPricePage() {
                 placeholder="Rechercher un produit (ex : riz, gaz, ciment...)"
                 className="w-full rounded-2xl border-[1.5px] border-line bg-white px-4 py-3.5 text-[15px] text-ink placeholder:text-[#9CA3AF] focus:border-brand-green-vivid focus:outline-none"
               />
-              {productResults && productResults.length > 0 && (
+              {productQuery.trim().length >= 2 && (productResults?.length ?? 0) > 0 && (
                 <div className="absolute z-10 mt-1.5 w-full rounded-2xl border border-line bg-white p-1.5 shadow-lg">
-                  {productResults.map((p) => (
+                  {productResults!.map((p) => (
                     <button
                       key={p.id}
                       type="button"
@@ -290,6 +312,38 @@ export function AddPricePage() {
                       <span className="text-sm font-semibold text-ink">{p.name}</span>
                     </button>
                   ))}
+                </div>
+              )}
+
+              {productQuery.trim().length >= 2 && productResults && productResults.length === 0 && (
+                <div className="mt-2.5 rounded-2xl border border-dashed border-line bg-app-bg p-3.5">
+                  <p className="mb-2.5 text-sm text-ink">
+                    Aucun produit trouvé pour « <b>{productQuery.trim()}</b> ».
+                  </p>
+                  <div className="mb-2.5 grid grid-cols-4 gap-2">
+                    {Object.entries(CATEGORY_EMOJI).map(([label, emoji]) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => setNewProductCategory(label)}
+                        className={`rounded-xl border-[1.5px] px-1 py-2.5 text-center ${
+                          newProductCategory === label ? 'border-brand-green-vivid bg-brand-green-light' : 'border-line bg-white'
+                        }`}
+                      >
+                        <span className="block text-lg">{emoji}</span>
+                        <span className="text-[9px] font-semibold leading-tight text-ink">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!newProductCategory || isCreatingProduct}
+                    onClick={handleCreateProduct}
+                    className="w-full rounded-xl bg-brand-green py-2.5 text-sm font-bold text-white disabled:opacity-50"
+                  >
+                    {isCreatingProduct ? 'Création...' : `Créer « ${productQuery.trim()} » comme nouveau produit`}
+                  </button>
+                  {createProductError && <p className="mt-2 text-xs text-red-600">{createProductError}</p>}
                 </div>
               )}
             </div>

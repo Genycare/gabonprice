@@ -44,6 +44,12 @@ export async function fetchProducts(filters: ProductFilters = {}): Promise<Produ
   return data
 }
 
+export async function createProduct(name: string, category: string): Promise<Product> {
+  const { data, error } = await supabase.from('products').insert({ name, category }).select().single()
+  if (error) throw error
+  return data
+}
+
 export async function fetchProduct(productId: string): Promise<Product> {
   const { data, error } = await supabase.from('products').select('*').eq('id', productId).single()
   if (error) throw error
