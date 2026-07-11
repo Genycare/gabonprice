@@ -39,7 +39,9 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 
 ## 🟠 Moyen
 
-### M1 — Bucket Storage `price-photos` sans limite serveur de taille ni de type MIME
+### M1 — Bucket Storage `price-photos` sans limite serveur de taille ni de type MIME — ✅ CORRIGÉ (2026-07-11)
+
+> Bucket reconfiguré : `file_size_limit = 300000` (300 Ko), `allowed_mime_types = ['image/jpeg','image/png','image/webp']`. Le flux normal de l'app (compression client, toujours < 200 Ko en `image/jpeg`) reste inchangé ; tout appel direct à l'API Storage hors app avec un fichier trop volumineux ou d'un type non listé est désormais rejeté nativement par Supabase Storage avant même d'atteindre les policies RLS.
 
 - **Où** : Supabase Storage, bucket `price-photos` (`public=true`, `file_size_limit=null`, `allowed_mime_types=null`) ; `frontend/src/lib/photo.ts:12-38` (compression uniquement côté client, canvas → JPEG < 200 Ko).
 - **Risque** : la policy RLS `price_photos_insert_own` (`storage.objects`, `WITH CHECK bucket_id='price-photos' AND foldername[1]=auth.uid()`) limite bien l'écriture au dossier de l'utilisateur authentifié, mais **rien ne contraint la taille ou le type du fichier côté serveur**. Le flux normal de l'app réencode toujours l'image en JPEG plat (donc sûr par construction), mais un utilisateur authentifié peut appeler directement l'API Storage (hors app, ex. `curl` avec son propre JWT) pour uploader un fichier arbitraire (taille illimitée, `Content-Type` arbitraire) dans son propre dossier.
@@ -142,7 +144,7 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 ## Checklist priorisée des actions
 
 1. ~~**[Élevé]** Restreindre les GRANTs `anon` (INSERT/UPDATE) sur `prices`, `price_ratings`, `price_reports`, `products`, `users`, `price_history` — E1.~~ ✅ Corrigé le 2026-07-11.
-2. **[Moyen]** Configurer `file_size_limit` + `allowed_mime_types` sur le bucket `price-photos` — M1.
+2. ~~**[Moyen]** Configurer `file_size_limit` + `allowed_mime_types` sur le bucket `price-photos` — M1.~~ ✅ Corrigé le 2026-07-11.
 3. **[Moyen]** Vider `queryClient` + caches Workbox à la déconnexion — M2.
 4. **[Moyen]** Ajouter les en-têtes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` dans `vercel.json` — M3.
 5. **[Moyen]** Vérifier manuellement dans le Dashboard Supabase l'expiration OTP et le rate-limit de `/verify` — M4.
