@@ -39,7 +39,7 @@ const DollarIcon = ({ className }: { className?: string }) => (
 )
 
 const FEATURES = [
-  { icon: TagIcon, title: 'Prix justes et transparents', subtitle: 'Des prix clairs et équitables pour chaque Gabonais.' },
+  { icon: TagIcon, title: 'Prix justes et transparents', subtitle: "Chaque prix vient d'un achat réel, vérifié par la communauté." },
   { icon: ScaleIcon, title: 'Comparer pour mieux choisir', subtitle: 'Comparez facilement et faites le meilleur choix.' },
   { icon: DollarIcon, title: 'Économisez au quotidien', subtitle: "Trouvez le meilleur prix avant d'acheter." },
 ]
