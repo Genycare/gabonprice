@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchProducts, type Product } from '../lib/products'
 import { categoryEmoji } from '../lib/categories'
@@ -10,6 +10,8 @@ import { cacheProducts, searchOfflineProducts } from '../lib/offlineProducts'
 
 export function SearchPage() {
   const isOnline = useOnlineStatus()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const category = searchParams.get('categorie') ?? ''
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [province, setProvince] = useState('')
@@ -21,16 +23,17 @@ export function SearchPage() {
   }, [searchInput])
 
   const { data: onlineProducts, isLoading, isError } = useQuery({
-    queryKey: ['products', { search, province, city }],
-    queryFn: () => fetchProducts({ search: search || undefined, province: province || undefined, city: city || undefined }),
+    queryKey: ['products', { search, province, city, category }],
+    queryFn: () =>
+      fetchProducts({ search: search || undefined, province: province || undefined, city: city || undefined, category: category || undefined }),
     enabled: isOnline,
   })
 
   useEffect(() => {
-    if (isOnline && onlineProducts && !search && !province && !city) {
+    if (isOnline && onlineProducts && !search && !province && !city && !category) {
       cacheProducts(onlineProducts)
     }
-  }, [isOnline, onlineProducts, search, province, city])
+  }, [isOnline, onlineProducts, search, province, city, category])
 
   const products: Product[] | undefined = isOnline ? onlineProducts : searchOfflineProducts(search)
 
@@ -94,6 +97,23 @@ export function SearchPage() {
           </p>
         )}
       </header>
+
+      {category && (
+        <div className="px-4.5 pt-3.5">
+          <button
+            onClick={() =>
+              setSearchParams((params) => {
+                params.delete('categorie')
+                return params
+              })
+            }
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand-green-light px-3 py-1.5 text-xs font-bold text-brand-green"
+          >
+            {categoryEmoji(category)} {category}
+            <span className="text-[10px]">✕</span>
+          </button>
+        </div>
+      )}
 
       <div className="flex items-center justify-between px-4.5 pb-2.5 pt-4">
         <div className="text-[13px] font-semibold text-muted">

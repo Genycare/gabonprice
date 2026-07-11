@@ -11,6 +11,7 @@ export interface ProductFilters {
   search?: string
   province?: string
   city?: string
+  category?: string
 }
 
 export async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
@@ -30,6 +31,9 @@ export async function fetchProducts(filters: ProductFilters = {}): Promise<Produ
   let query = supabase.from('products').select('*').order('name')
   if (filters.search) {
     query = query.textSearch('search_vector', filters.search, { type: 'websearch', config: 'french' })
+  }
+  if (filters.category) {
+    query = query.eq('category', filters.category)
   }
   if (productIds) {
     query = query.in('id', productIds)
