@@ -9,6 +9,9 @@ import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { queryClient } from './lib/queryClient'
+import { initSentry } from './lib/sentry'
+
+initSentry()
 
 // Une PWA installée reste ouverte longtemps : sans rechargement forcé au
 // prochain déploiement, elle peut continuer à exécuter un vieux bundle JS
