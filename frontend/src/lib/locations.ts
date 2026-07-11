@@ -1,11 +1,25 @@
-export const PROVINCES = ['Estuaire', 'Ogooué-Maritime', 'Haut-Ogooué', 'Moyen-Ogooué', 'Ngounié'] as const
+export const PROVINCES = [
+  'Estuaire',
+  'Haut-Ogooué',
+  'Moyen-Ogooué',
+  'Ngounié',
+  'Nyanga',
+  'Ogooué-Ivindo',
+  'Ogooué-Lolo',
+  'Ogooué-Maritime',
+  'Woleu-Ntem',
+] as const
 
 export const CITIES_BY_PROVINCE: Record<(typeof PROVINCES)[number], string[]> = {
   Estuaire: ['Libreville', 'Owendo', 'Akanda', 'Ntoum'],
-  'Ogooué-Maritime': ['Port-Gentil', 'Omboué'],
   'Haut-Ogooué': ['Franceville', 'Moanda', 'Okondja'],
   'Moyen-Ogooué': ['Lambaréné', 'Ndjolé'],
   Ngounié: ['Mouila', 'Ndendé'],
+  Nyanga: ['Tchibanga', 'Mayumba', 'Moabi'],
+  'Ogooué-Ivindo': ['Makokou', 'Booué', 'Mékambo'],
+  'Ogooué-Lolo': ['Koulamoutou', 'Lastoursville', 'Pana'],
+  'Ogooué-Maritime': ['Port-Gentil', 'Omboué'],
+  'Woleu-Ntem': ['Oyem', 'Bitam', 'Mitzic', 'Minvoul'],
 }
 
 export const CITIES = Object.values(CITIES_BY_PROVINCE).flat()
