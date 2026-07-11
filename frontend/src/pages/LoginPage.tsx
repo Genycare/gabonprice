@@ -68,7 +68,7 @@ export function LoginPage() {
         <form
           onSubmit={handleSubmit}
           className="absolute z-10 flex flex-col justify-center rounded-[20px] bg-white px-4 py-4 shadow-[0_10px_40px_rgba(0,0,0,0.15)]"
-          style={{ top: '47.2%', left: '13.1%', width: '73.8%' }}
+          style={{ top: '47.2%', left: '13.1%', width: '73.8%', height: '30.8%' }}
         >
           <div className="mb-3 flex items-center gap-2.5">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[22%] bg-brand-green-light">
