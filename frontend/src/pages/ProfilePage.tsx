@@ -5,12 +5,6 @@ import { fetchUserPrices } from '../lib/products'
 import { useSession } from '../hooks/useSession'
 import { levelProgress } from '../lib/karma'
 
-function formatPhone(phone: string): string {
-  const match = phone.match(/^\+241(\d)(\d{2})(\d{2})(\d{2})(\d{2})$/)
-  if (!match) return phone
-  return `+241 ${match[1]} ${match[2]} ${match[3]} ${match[4]} ${match[5]}`
-}
-
 function initials(username: string): string {
   const clean = username.replace(/^user_/, '')
   return clean.slice(0, 2).toUpperCase()
@@ -49,7 +43,7 @@ export function ProfilePage() {
           {initials(profile.username)}
         </div>
         <div className="mb-1 text-[19px] font-extrabold">{profile.username}</div>
-        <div className="mb-2.5 text-[13px] text-white/85">{formatPhone(profile.phone)}</div>
+        <div className="mb-2.5 text-[13px] text-white/85">{profile.email}</div>
         <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.25 text-xs font-bold">
           ⭐ {profile.level}
         </div>

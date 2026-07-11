@@ -4,7 +4,7 @@ export type UserLevel = 'Débutant' | 'Contributeur' | 'Confirmé' | 'Expert'
 
 export interface User {
   id: string
-  phone: string
+  email: string | null
   username: string
   karmaScore: number
   level: UserLevel

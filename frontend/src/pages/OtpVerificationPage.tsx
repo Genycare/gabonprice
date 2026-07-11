@@ -44,7 +44,7 @@ const FEATURES = [
 export function OtpVerificationPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const phone = (location.state as { phone?: string } | null)?.phone
+  const email = (location.state as { email?: string } | null)?.email
 
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(''))
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS)
@@ -53,10 +53,10 @@ export function OtpVerificationPage() {
   const inputsRef = useRef<Array<HTMLInputElement | null>>([])
 
   useEffect(() => {
-    if (!phone) {
+    if (!email) {
       navigate('/connexion', { replace: true })
     }
-  }, [phone, navigate])
+  }, [email, navigate])
 
   useEffect(() => {
     if (secondsLeft <= 0) return
@@ -95,8 +95,8 @@ export function OtpVerificationPage() {
   }
 
   async function handleResend() {
-    if (secondsLeft > 0 || !phone) return
-    const { error: resendError } = await supabase.auth.signInWithOtp({ phone })
+    if (secondsLeft > 0 || !email) return
+    const { error: resendError } = await supabase.auth.signInWithOtp({ email })
     if (resendError) {
       setError("Impossible de renvoyer le code pour l'instant. Réessayez plus tard.")
       return
@@ -114,14 +114,14 @@ export function OtpVerificationPage() {
       setError('Entrez les 6 chiffres du code.')
       return
     }
-    if (!phone) return
+    if (!email) return
     setError(null)
     setIsSubmitting(true)
     try {
       const { error: verifyError } = await supabase.auth.verifyOtp({
-        phone,
+        email,
         token: fullCode,
-        type: 'sms',
+        type: 'email',
       })
       if (verifyError) {
         setError('Code invalide ou expiré. Réessayez.')
@@ -133,7 +133,7 @@ export function OtpVerificationPage() {
     }
   }
 
-  if (!phone) return null
+  if (!email) return null
 
   const timerLabel = `${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(secondsLeft % 60).padStart(2, '0')}`
 
@@ -146,12 +146,12 @@ export function OtpVerificationPage() {
         className="relative z-10 -mt-14 mx-5 rounded-[26px] bg-white px-6 pb-6 pt-7 shadow-[0_10px_40px_rgba(0,0,0,0.15)]"
       >
         <Link to="/connexion" className="mb-4.5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green-vivid">
-          ← Modifier le numéro
+          ← Modifier l'adresse
         </Link>
 
-        <h1 className="mb-1.5 text-[22px] font-bold text-ink">Vérifiez votre numéro</h1>
+        <h1 className="mb-1.5 text-[22px] font-bold text-ink">Vérifiez votre email</h1>
         <p className="mb-6.5 text-[15px] leading-relaxed text-muted">
-          Entrez le code à 6 chiffres envoyé au <b className="text-ink">{phone}</b>
+          Entrez le code à 6 chiffres envoyé à <b className="text-ink">{email}</b>
         </p>
 
         <div className="mb-6.5 grid grid-cols-6 gap-2.5">

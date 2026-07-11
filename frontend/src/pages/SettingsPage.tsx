@@ -108,8 +108,8 @@ export function SettingsPage() {
         </div>
 
         <div>
-          <div className="mb-2 text-[13px] font-bold text-ink">Téléphone</div>
-          <div className="w-full rounded-2xl border-[1.5px] border-line bg-app-bg px-4 py-3.5 text-[15px] text-muted">{profile.phone}</div>
+          <div className="mb-2 text-[13px] font-bold text-ink">Email</div>
+          <div className="w-full rounded-2xl border-[1.5px] border-line bg-app-bg px-4 py-3.5 text-[15px] text-muted">{profile.email}</div>
         </div>
 
         {saveMessage && <p className="text-sm text-muted">{saveMessage}</p>}

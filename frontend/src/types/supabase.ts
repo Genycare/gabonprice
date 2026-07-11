@@ -232,34 +232,34 @@ export type Database = {
       users: {
         Row: {
           created_at: string
+          email: string | null
           id: string
           is_admin: boolean
           is_banned: boolean
           karma_score: number
           level: string
-          phone: string
           preferred_province: string | null
           username: string
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id: string
           is_admin?: boolean
           is_banned?: boolean
           karma_score?: number
           level?: string
-          phone: string
           preferred_province?: string | null
           username: string
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
           is_admin?: boolean
           is_banned?: boolean
           karma_score?: number
           level?: string
-          phone?: string
           preferred_province?: string | null
           username?: string
         }
@@ -284,12 +284,12 @@ export type Database = {
         Args: never
         Returns: {
           created_at: string
+          email: string | null
           id: string
           is_admin: boolean
           is_banned: boolean
           karma_score: number
           level: string
-          phone: string
           preferred_province: string | null
           username: string
         }
