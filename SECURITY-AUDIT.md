@@ -11,7 +11,7 @@ Le projet part d'une base solide : RLS activée partout, aucune clé secrète ex
 
 Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée aujourd'hui. Les points **Élevé/Moyen** ci-dessous sont soit des violations du principe du moindre privilège (défense en profondeur), soit des lacunes concrètes (upload, headers, hygiène de session) qui méritent correction avant une ouverture publique plus large.
 
-**Mise à jour** : 9 des 10 points (E1, M1, M2, M3, F1, F2, F3, F5) ont été corrigés, testés (transactions SQL annulées reproduisant les scénarios réels + `npm run build`) et déployés le 2026-07-11. Un correctif (F3, retrait du GRANT `UPDATE(product_id)`) a révélé une régression réelle sur l'édition de prix avant déploiement — détectée en reproduisant le payload exact de l'app, corrigée côté frontend (`updatePrice()`), revérifiée. Seul M4 (config OTP) et F4 (Leaked Password Protection) restent en attente : ce sont des réglages de plateforme Supabase Dashboard, non accessibles via SQL/migration.
+**Mise à jour** : 9 des 10 points (E1, M1, M2, M3, M4, F1, F2, F3, F5) sont corrigés. Un correctif (F3, retrait du GRANT `UPDATE(product_id)`) a révélé une régression réelle sur l'édition de prix avant déploiement — détectée en reproduisant le payload exact de l'app, corrigée côté frontend (`updatePrice()`), revérifiée. M4 (expiration OTP ramenée de 1h à 5 min) corrigé le 2026-07-12 via le Dashboard. Seul F4 (Leaked Password Protection) reste non résolu — **bloqué par le plan gratuit Supabase** (fonctionnalité Pro plan uniquement), sans impact réel puisque l'app n'utilise jamais l'authentification par mot de passe.
 
 ---
 
@@ -88,11 +88,13 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
   ```
   Une CSP stricte est plus délicate ici (Supabase, Sentry, images `data:`/blob pour la compression photo côté client) — à construire et tester séparément plutôt que de l'ajouter à l'aveugle.
 
-### M4 — Rate-limiting et expiration OTP non vérifiables (config Dashboard, pas de code)
+### M4 — Rate-limiting et expiration OTP non vérifiables (config Dashboard, pas de code) — ✅ CORRIGÉ (2026-07-12)
 
-- **Où** : Supabase Dashboard → Authentication → Rate Limits / Providers → Email.
-- **Constat** : les logs Auth des dernières 24h confirment que le rate-limiting **est actif** (49 réponses `429`, code d'erreur `over_email_send_rate_limit` observés lors des tests de ce soir) — c'est le comportement natif de Supabase Auth, aucune régression détectée. En revanche, les valeurs exactes (nombre de tentatives autorisées, durée d'expiration du code OTP, nombre max de tentatives de vérification) sont des réglages du Dashboard, non lisibles via SQL/API depuis cet audit.
-- **Recommandation** : vérifier manuellement dans le Dashboard que l'expiration du code OTP est courte (≤ 10 min, idéalement 5 min comme demandé dans le brief) — la valeur par défaut de Supabase peut être plus longue (jusqu'à 1h pour les OTP e-mail selon les versions). Un code numérique à 6 chiffres (1 000 000 de combinaisons) reste théoriquement brute-forçable si la fenêtre de validité est longue et si le rate-limit sur `/verify` (par IP, distinct du rate-limit d'envoi) n'est pas assez strict — à confirmer/durcir dans le Dashboard, aucune action code nécessaire.
+> Confirmé : l'expiration par défaut était bien de **3600 s (1h)**, comme redouté à l'audit — ramenée à **300 s (5 min)** dans Dashboard → Authentication → Sign In / Providers → Email → « Email OTP expiration ». Le rate-limiting d'envoi était déjà actif nativement (confirmé par les logs lors de l'audit initial).
+
+- **Où** : Supabase Dashboard → Authentication → Sign In / Providers → Email.
+- **Constat** : les logs Auth des dernières 24h confirment que le rate-limiting **est actif** (49 réponses `429`, code d'erreur `over_email_send_rate_limit` observés lors des tests de ce soir) — c'est le comportement natif de Supabase Auth, aucune régression détectée.
+- **Correctif** : `Email OTP expiration` changé de `3600` à `300` secondes via le Dashboard. `Email OTP length` (6 chiffres) inchangé, conforme à l'app.
 
 ---
 
@@ -122,11 +124,11 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 - **Risque** : un utilisateur pourrait, via un appel direct à l'API (hors UI, qui ne propose pas ce champ en édition), réassigner un de ses prix à un autre produit — pollution de données mineure, pas de risque de confidentialité/intégrité au-delà du produit ciblé.
 - **Correctif** : retirer `product_id` du `GRANT UPDATE` scopé à `authenticated` sur `prices` (le déplacement d'un prix vers un autre produit doit passer par une suppression + recréation, pas une édition).
 
-### F4 — "Leaked Password Protection" désactivée (Supabase Auth) — ⏳ Action manuelle requise
+### F4 — "Leaked Password Protection" désactivée (Supabase Auth) — 🔒 Bloqué par le plan Supabase (non corrigible actuellement)
 
-- **Où** : Dashboard Supabase → Authentication, signalé par l'advisor de sécurité natif.
-- **Constat** : sans impact réel ici — l'app n'utilise **jamais** l'authentification par mot de passe (uniquement OTP e-mail), donc ce réglage ne s'applique à aucun flux utilisateur actuel. Activation à coût nul si un flux mot de passe est ajouté un jour.
-- **Non corrigeable via SQL/migration** : ce réglage n'est pas stocké dans une table Postgres accessible (vérifié : aucune table de config dans le schéma `auth`), c'est un paramètre de plateforme géré uniquement par le Dashboard ou l'API de gestion Supabase. À activer manuellement : Dashboard → Authentication → Policies (ou Providers → Email) → "Leaked password protection".
+- **Où** : Dashboard Supabase → Authentication → Sign In / Providers → Email → « Prevent use of leaked passwords », signalé par l'advisor de sécurité natif.
+- **Constat** : tentative d'activation le 2026-07-12 → rejetée par Supabase (« Configuring leaked password protection via HaveIBeenPwned.org is available on Pro Plans and up »). Le projet est sur le plan gratuit ; cette fonctionnalité nécessite un upgrade vers le plan Pro (~25 $/mois).
+- **Impact réel** : nul — l'app n'utilise **jamais** l'authentification par mot de passe (uniquement OTP e-mail), donc ce réglage ne s'applique à aucun flux utilisateur actuel. Pas de justification à payer pour un plan Pro uniquement pour ce point ; à reconsidérer si un flux mot de passe est ajouté un jour ou si le projet passe au plan Pro pour d'autres raisons.
 
 ### F5 — Dépendances légèrement en retard (non liées à des CVE) — ✅ CORRIGÉ (2026-07-11)
 
@@ -159,11 +161,11 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 2. ~~**[Moyen]** Configurer `file_size_limit` + `allowed_mime_types` sur le bucket `price-photos` — M1.~~ ✅ Corrigé le 2026-07-11.
 3. ~~**[Moyen]** Vider `queryClient` + caches Workbox à la déconnexion — M2.~~ ✅ Corrigé le 2026-07-11.
 4. ~~**[Moyen]** Ajouter les en-têtes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` dans `vercel.json` — M3.~~ ✅ Corrigé le 2026-07-11 (CSP volontairement exclue, à traiter séparément).
-5. **[Moyen]** Vérifier manuellement dans le Dashboard Supabase l'expiration OTP et le rate-limit de `/verify` — M4. *(action manuelle, hors portée des outils utilisés ici)*
+5. ~~**[Moyen]** Vérifier manuellement dans le Dashboard Supabase l'expiration OTP et le rate-limit de `/verify` — M4.~~ ✅ Corrigé le 2026-07-12 (expiration ramenée de 1h à 5 min).
 6. ~~**[Faible]** Revoke `EXECUTE` sur `delete_my_account()` pour `anon` — F1.~~ ✅ Corrigé le 2026-07-11.
 7. ~~**[Faible]** Ajouter une contrainte `UNIQUE(price_id, user_id)` sur `price_reports` — F2.~~ ✅ Corrigé le 2026-07-11.
 8. ~~**[Faible]** Retirer `product_id` du GRANT `UPDATE` authenticated sur `prices` — F3.~~ ✅ Corrigé le 2026-07-11 (+ correctif frontend associé, régression détectée avant déploiement).
-9. **[Faible]** Activer "Leaked Password Protection" dans le Dashboard (coût nul, aucun flux mot de passe actuellement) — F4. *(action manuelle, Dashboard uniquement)*
+9. **[Faible]** Activer "Leaked Password Protection" dans le Dashboard — F4. 🔒 **Bloqué par le plan gratuit Supabase** (nécessite le plan Pro), sans impact réel puisque l'app n'utilise pas de mot de passe.
 10. ~~**[Faible]** Mettre à jour `@supabase/supabase-js` et les devDependencies mineures — F5.~~ ✅ Corrigé le 2026-07-11.
 
-**9 des 10 points corrigés et déployés.** Seul F4 (Leaked Password Protection) reste à faire, et uniquement via le Dashboard Supabase — aucun outil disponible ici ne permet de le modifier par API/SQL.
+**9 des 10 points corrigés et déployés.** Seul F4 (Leaked Password Protection) reste bloqué par une limite du plan gratuit Supabase (pas un oubli), sans impact réel sur la sécurité de l'app actuelle.
