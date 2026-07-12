@@ -8,6 +8,7 @@ import { formatFcfa } from '../lib/format'
 import { timeAgo, formatPurchaseDate } from '../lib/time'
 import { useSession } from '../hooks/useSession'
 import { supabase } from '../lib/supabase'
+import { PhotoLightbox } from '../components/PhotoLightbox'
 
 const REPORT_REASONS = ['Prix incorrect', 'Information trompeuse ou obsolète', 'Doublon', 'Autre']
 
@@ -30,6 +31,7 @@ function PriceCard({
   onVote,
   onToggleReport,
   onReport,
+  onEnlargePhoto,
 }: {
   entry: PriceWithContributor
   best: boolean
@@ -41,6 +43,7 @@ function PriceCard({
   onVote: (id: string, rating: 1 | -1) => void
   onToggleReport: (id: string) => void
   onReport: (id: string, reason: string) => void
+  onEnlargePhoto: (url: string) => void
 }) {
   return (
     <div className={`rounded-card-lg border bg-white p-4 shadow-sm ${best ? 'border-2 border-brand-green-vivid' : 'border-line'}`}>
@@ -79,12 +82,14 @@ function PriceCard({
 
       <div className="mb-3 flex items-center gap-2.5 border-y border-line py-3">
         {entry.photo_url ? (
-          <img
-            src={entry.photo_url}
-            alt="Ticket de caisse"
-            loading="lazy"
-            className="h-11 w-11 flex-shrink-0 rounded-[10px] object-cover"
-          />
+          <button
+            type="button"
+            onClick={() => onEnlargePhoto(entry.photo_url!)}
+            aria-label="Agrandir la photo du ticket"
+            className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-[10px]"
+          >
+            <img src={entry.photo_url} alt="Ticket de caisse" loading="lazy" className="h-full w-full object-cover" />
+          </button>
         ) : (
           <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#F3F4F6] to-[#E5E7EB] text-xl">
             🧾
@@ -201,6 +206,7 @@ export function ProductDetailPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [reportOpenId, setReportOpenId] = useState<string | null>(null)
+  const [enlargedPhoto, setEnlargedPhoto] = useState<string | null>(null)
 
   const { data: product } = useQuery({
     queryKey: ['product', id],
@@ -337,9 +343,12 @@ export function ProductDetailPage() {
             onVote={handleVote}
             onToggleReport={(priceId) => setReportOpenId((current) => (current === priceId ? null : priceId))}
             onReport={handleReport}
+            onEnlargePhoto={setEnlargedPhoto}
           />
         ))}
       </div>
+
+      {enlargedPhoto && <PhotoLightbox photoUrl={enlargedPhoto} onClose={() => setEnlargedPhoto(null)} />}
     </div>
   )
 }
