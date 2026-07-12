@@ -26,6 +26,16 @@ registerSW({
   },
 })
 
+// Un chunk lazy-loadé (route React.lazy) peut référencer un hash de fichier
+// qui n'existe plus si un nouveau déploiement a eu lieu pendant que l'onglet
+// était resté ouvert avec l'ancien bundle en mémoire ("Failed to fetch
+// dynamically imported module"). Vite émet cet événement dans ce cas précis ;
+// un rechargement complet récupère la dernière version au lieu de laisser
+// l'app plantée sur une page blanche.
+window.addEventListener('vite:preloadError', () => {
+  window.location.reload()
+})
+
 persistQueryClient({
   queryClient,
   persister: createSyncStoragePersister({ storage: window.localStorage, key: 'gabonprice:query-cache' }),
