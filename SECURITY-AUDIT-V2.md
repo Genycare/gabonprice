@@ -104,12 +104,12 @@ Les points relevés ci-dessous sont **4 failles Moyennes** (défense en profonde
 
 ## 🟢 Faible / Informatif
 
-### F2026-1 — Vérifier que l'authentification par mot de passe est désactivée sur le provider Email Supabase
+### F2026-1 — Authentification par mot de passe toujours active sur le provider Email Supabase — 🔒 Vérifié, non corrigeable sans casser l'OTP (risque accepté, 2026-07-12)
 
-- **Où** : Dashboard Supabase → Authentication → Sign In / Providers → Email — capture d'écran obtenue pendant l'audit montre des champs "Minimum password length" / "Password requirements" actifs sur ce provider, alors que l'app n'utilise **jamais** `signInWithPassword`/`signUp` avec mot de passe (uniquement `signInWithOtp`).
-- **Constat** : si le provider Email autorise toujours l'inscription/connexion par mot de passe en parallèle de l'OTP, un attaquant pourrait appeler directement l'API publique (`supabase.auth.signUp({email, password})` avec la clé `anon`, publique par design) pour des flux jamais prévus par l'app — surface d'attaque inutile pour une fonctionnalité non utilisée. Non vérifiable/désactivable via SQL ou les outils disponibles ici (réglage de plateforme Dashboard, même famille que M4/F4 de l'audit v1).
-- **Sévérité** : Informatif — pas de preuve d'exploitation, principe du moindre privilège.
-- **Recommandation** : dans Dashboard → Authentication → Sign In / Providers → Email, si une option distincte type "Enable password sign-in" existe, la désactiver et ne garder que l'OTP.
+- **Où** : Dashboard Supabase → Authentication → Sign In / Providers → Email.
+- **Constat** : vérifié le 2026-07-12 — Supabase n'expose **qu'un seul toggle** (« Enable email provider ») qui gouverne à la fois l'OTP e-mail et l'authentification par mot de passe pour le provider Email ; il n'existe aucune option séparée pour désactiver uniquement le mot de passe. Désactiver ce toggle casserait aussi `signInWithOtp`, le flux d'authentification exclusif de l'app. **Impossible à corriger sans casser l'authentification.**
+- **Constat additionnel** : `secure password change` et `require current password when updating` sont désactivés — sans conséquence puisque l'app n'expose jamais de flux de changement de mot de passe.
+- **Sévérité** : Informatif — surface d'attaque techniquement présente côté plateforme (un attaquant pourrait appeler `supabase.auth.signUp({email, password})` directement via l'API publique), mais indissociable du fonctionnement de l'OTP e-mail dans l'offre actuelle de Supabase. Risque accepté, aucune action possible côté Dashboard ou code.
 
 ### F2026-2 — Cache Workbox `supabase-api` non scindé par session (dépend d'une déconnexion explicite)
 
@@ -132,7 +132,7 @@ Les points relevés ci-dessous sont **4 failles Moyennes** (défense en profonde
 
 ### Informatif — Réglages de plateforme non vérifiables avec les outils actuels
 
-- **Durée/rotation de session JWT** (Dashboard → Authentication → Sessions) : non vérifiée dans cet audit (même limite que M4/F4 v1 — réglage Dashboard, pas de table Postgres accessible). Les valeurs par défaut Supabase (access token 1h, refresh token rotatif) sont raisonnables ; à confirmer manuellement si souhaité.
+- **Durée/rotation de session JWT** — ✅ Vérifié le 2026-07-12 (Dashboard → Authentication → Sessions). « Detect and revoke potentially compromised refresh tokens » activé, « Refresh token reuse interval » = 10 s (valeur recommandée par Supabase lui-même) — un refresh token volé et rejoué déclenche une révocation automatique, protection efficace même sans configuration additionnelle. Seuls « Time-box user sessions » (expiration absolue) et « Inactivity timeout » sont verrouillés par le plan gratuit (même limite que F4) et restent à `0`/`never` — un attaquant ayant déjà compromis un refresh token pourrait théoriquement le voir se rafraîchir indéfiniment tant qu'aucune réutilisation suspecte n'est détectée, mais ce scénario suppose déjà un vol de token réussi (hors du périmètre de cette protection). Risque accepté, cohérent avec le profil de l'app (pas de données bancaires/sensibles).
 - **Sentry sans `beforeSend` de nettoyage PII** (`frontend/src/lib/sentry.ts`) : aucune fuite de PII observée dans les traces Sentry examinées (le breadcrumb réseau capturé lors d'un incident récent montrait `"url":"[Filtered]"`, confirmant que le SDK filtre déjà les URLs sensibles par défaut). Recommandation de durcissement préventif, pas une faille constatée : ajouter un `beforeSend` qui retire tout champ `email` d'un contexte d'erreur avant envoi, en cas d'évolution future du code qui capturerait des objets contenant des PII.
 - **Index inutilisé `products_category_idx`** (advisor performance, INFO) — hors périmètre sécurité, mentionné pour complétude.
 
@@ -166,11 +166,11 @@ Les points relevés ci-dessous sont **4 failles Moyennes** (défense en profonde
 | M2026-2 | Type MIME photo validé par déclaration client, pas par contenu réel | 🟡 Moyen | 3.7 | Élevé (Edge Function de validation) ou accepté tel quel | ⚠️ Accepté, non corrigé |
 | M2026-3 | CSP absente (résidu M3 v1) | 🟡 Moyen | 4.5 | Moyen (calibrage + tests approfondis) | ✅ Corrigé 2026-07-12 |
 | M2026-4 | `ErrorBoundary` affiche le message d'erreur brut | 🟡 Moyen | 3.1 | Faible (1 ligne à retirer/remplacer) | ✅ Corrigé 2026-07-12 |
-| F2026-1 | Password sign-in peut-être encore actif sur le provider Email | 🟢 Faible | — | Faible (1 toggle Dashboard) | ⏳ Action manuelle requise |
+| F2026-1 | Password sign-in indissociable du toggle Email (OTP inclus) | 🟢 Faible | — | Nul (pas de toggle séparé côté Supabase) | 🔒 Vérifié, non corrigeable |
 | F2026-2 | Cache Workbox non scindé par session (expiration silencieuse) | 🟢 Faible | — | Faible (TTL) à Nul (accepté) | ⚠️ Accepté, non corrigé |
 | F2026-3 | `rls_auto_enable()` bruit d'advisor, faux positif | 🟢 Informatif | — | Nul | ✅ Corrigé 2026-07-12 |
 | F2026-4 | Sockpuppeting multi-comptes (karma/votes) | 🟢 Informatif | — | Élevé (hors scope actuel) | ⚠️ Accepté, risque produit |
-| Info | Durée de session JWT non vérifiée (Dashboard) | 🔵 Informatif | — | Faible (vérification manuelle) | ⏳ Action manuelle requise |
+| Info | Durée/rotation de session JWT | 🔵 Informatif | — | Nul (config par défaut satisfaisante) | ✅ Vérifié 2026-07-12, accepté |
 | Info | Sentry sans `beforeSend` PII | 🔵 Informatif | — | Faible (durcissement préventif) | ⚠️ Non appliqué |
 
 ---
