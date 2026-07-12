@@ -300,8 +300,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      is_admin: { Args: { uid?: string }; Returns: boolean }
-      is_banned: { Args: { uid?: string }; Returns: boolean }
       recalc_product_median: {
         Args: { p_product_id: string }
         Returns: undefined
@@ -318,7 +316,7 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals["public"]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends

@@ -7,18 +7,20 @@ interface Props {
 
 interface State {
   error: Error | null
+  eventId: string | null
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null }
+  state: State = { error: null, eventId: null }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Pick<State, 'error'> {
     return { error }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('Erreur non interceptée :', error, info.componentStack)
-    Sentry.captureException(error, { contexts: { react: { componentStack: info.componentStack } } })
+    const eventId = Sentry.captureException(error, { contexts: { react: { componentStack: info.componentStack } } })
+    this.setState({ eventId })
   }
 
   render() {
@@ -35,7 +37,9 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             Recharger
           </button>
-          <p className="max-w-xs break-words text-xs text-muted/70">{this.state.error.message}</p>
+          {this.state.eventId && (
+            <p className="max-w-xs break-words text-xs text-muted/70">Référence : {this.state.eventId}</p>
+          )}
         </div>
       )
     }
