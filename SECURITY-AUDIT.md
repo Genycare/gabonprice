@@ -90,11 +90,11 @@ Aucune vulnérabilité **Critique** directement exploitable n'a été trouvée a
 
 ### M4 — Rate-limiting et expiration OTP non vérifiables (config Dashboard, pas de code) — ✅ CORRIGÉ (2026-07-12)
 
-> Confirmé : l'expiration par défaut était bien de **3600 s (1h)**, comme redouté à l'audit — ramenée à **300 s (5 min)** dans Dashboard → Authentication → Sign In / Providers → Email → « Email OTP expiration ». Le rate-limiting d'envoi était déjà actif nativement (confirmé par les logs lors de l'audit initial).
+> Confirmé : l'expiration par défaut était bien de **3600 s (1h)**, comme redouté à l'audit — ramenée à **300 s (5 min)** dans Dashboard → Authentication → Sign In / Providers → Email → « Email OTP expiration ». Rate-limit de vérification (`/verify`) vérifié dans Dashboard → Authentication → Rate Limits : **30 requêtes / 5 min par IP** (« Rate limit for token verifications »). Combiné à l'expiration de 5 min, un attaquant dispose d'au plus 30 essais sur un code à 6 chiffres (1 chance sur 1 000 000) avant qu'il n'expire — largement suffisant, aucun ajustement nécessaire.
 
-- **Où** : Supabase Dashboard → Authentication → Sign In / Providers → Email.
-- **Constat** : les logs Auth des dernières 24h confirment que le rate-limiting **est actif** (49 réponses `429`, code d'erreur `over_email_send_rate_limit` observés lors des tests de ce soir) — c'est le comportement natif de Supabase Auth, aucune régression détectée.
-- **Correctif** : `Email OTP expiration` changé de `3600` à `300` secondes via le Dashboard. `Email OTP length` (6 chiffres) inchangé, conforme à l'app.
+- **Où** : Supabase Dashboard → Authentication → Sign In / Providers → Email ; Authentication → Rate Limits.
+- **Constat** : les logs Auth des dernières 24h confirment que le rate-limiting d'envoi **est actif** (49 réponses `429`, code d'erreur `over_email_send_rate_limit` observés lors des tests de ce soir) — c'est le comportement natif de Supabase Auth, aucune régression détectée.
+- **Correctif** : `Email OTP expiration` changé de `3600` à `300` secondes via le Dashboard. `Email OTP length` (6 chiffres) inchangé, conforme à l'app. Rate-limit `/verify` déjà correctement configuré par défaut (30 req/5min/IP), aucun changement nécessaire.
 
 ---
 
