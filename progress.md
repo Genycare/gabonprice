@@ -68,6 +68,7 @@
 - [x] Accueil : section « Tendances du jour » (scroll horizontal) — UI faite, données mock
 - [x] Accueil : section « Promos détectées » — UI faite, données mock
 - [x] Accueil : grille de catégories — UI faite, données mock
+- [x] Accueil : sélecteur de ville fonctionnel (remplace le bouton « Libreville » codé en dur) — `hooks/useSelectedCity.ts` (persistance `localStorage`, valeur par défaut Libreville) + `components/CityPicker.tsx` (bottom sheet listant les villes groupées par province, même style que `InstallPrompt`) ; `HomePage` passe désormais `city` à `fetchProducts` (Tendances/Promos filtrées) ; testé avec Playwright (ouverture, sélection « Port-Gentil », persistance après rechargement confirmée)
 - [x] Barre de navigation basse (Accueil / Chercher / Ajouter / Historique / Profil)
 - [x] **Recherche / résultats** : champ + filtres province/ville + tri (d'après `gabonprice-recherche.html`) — réalignée sur la maquette (bordures des filtres actifs, rayon des cartes 16px, compteur de résultats, badge de tri), branchée sur les vraies données
 - [x] **Fiche produit** : stats (médian, min, tendance) + liste des prix (d'après `gabonprice-detail-produit.html`) — UI fidèle, **branchée sur les vraies données** (stats et prix triés réels, plus mock)

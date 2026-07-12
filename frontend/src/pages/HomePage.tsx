@@ -1,11 +1,19 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchProducts } from '../lib/products'
 import { CATEGORY_EMOJI, categoryEmoji } from '../lib/categories'
 import { formatFcfa } from '../lib/format'
+import { useSelectedCity } from '../hooks/useSelectedCity'
+import { CityPicker } from '../components/CityPicker'
 
 export function HomePage() {
-  const { data: products } = useQuery({ queryKey: ['products', {}], queryFn: () => fetchProducts({}) })
+  const [city, setCity] = useSelectedCity()
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const { data: products } = useQuery({
+    queryKey: ['products', { city }],
+    queryFn: () => fetchProducts({ city }),
+  })
 
   const trending = [...(products ?? [])]
     .filter((p) => p.price_trend_7d != null)
@@ -43,12 +51,15 @@ export function HomePage() {
               Gabon<span className="text-brand-green-vivid">Price</span>
             </h1>
           </div>
-          <button className="flex items-center gap-1.5 rounded-full bg-brand-green-light px-3 py-2 text-sm font-bold text-brand-green">
+          <button
+            onClick={() => setPickerOpen(true)}
+            className="flex items-center gap-1.5 rounded-full bg-brand-green-light px-3 py-2 text-sm font-bold text-brand-green"
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
-            Libreville
+            {city}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3.5 w-3.5">
               <polyline points="6 9 12 15 18 9" />
             </svg>
@@ -153,6 +164,8 @@ export function HomePage() {
           ))}
         </div>
       </section>
+
+      {pickerOpen && <CityPicker selectedCity={city} onSelect={setCity} onClose={() => setPickerOpen(false)} />}
     </div>
   )
 }
