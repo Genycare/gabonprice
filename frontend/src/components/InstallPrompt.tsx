@@ -1,29 +1,64 @@
 import { useEffect, useState } from 'react'
 
-const STORAGE_KEY = 'gp_ios_install_dismissed'
+const STORAGE_KEY = 'gp_install_dismissed'
 
-function shouldShow(): boolean {
-  if (typeof window === 'undefined') return false
+// Type minimal pour l'événement Android (non standard dans les libs TS)
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
+
+function isStandalone(): boolean {
+  return (
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches
+  )
+}
+
+function isIosSafari(): boolean {
   const ua = window.navigator.userAgent.toLowerCase()
   const isIOS = /iphone|ipad|ipod/.test(ua)
   const isSafari = /safari/.test(ua) && !/crios|fxios|edgios|chrome|android/.test(ua)
-  const isStandalone =
-    (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
-    window.matchMedia('(display-mode: standalone)').matches
-  const dismissed = window.localStorage.getItem(STORAGE_KEY) === '1'
-  return isIOS && isSafari && !isStandalone && !dismissed
+  return isIOS && isSafari
 }
 
-export function IosInstallPrompt() {
-  const [visible, setVisible] = useState(false)
+export function InstallPrompt() {
+  const [mode, setMode] = useState<'none' | 'android' | 'ios'>('none')
+  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(shouldShow()), 1500)
-    return () => clearTimeout(t)
+    if (typeof window === 'undefined') return
+    if (isStandalone()) return
+    if (window.localStorage.getItem(STORAGE_KEY) === '1') return
+
+    // ANDROID : on capture l'invite native pour la déclencher via notre bouton
+    function onBeforeInstall(e: Event) {
+      e.preventDefault()
+      setDeferred(e as BeforeInstallPromptEvent)
+      setMode('android')
+    }
+    window.addEventListener('beforeinstallprompt', onBeforeInstall)
+
+    // iOS : pas d'événement natif → on détecte et on affiche le guide après un délai
+    let t: ReturnType<typeof setTimeout> | undefined
+    if (isIosSafari()) {
+      t = setTimeout(() => setMode((m) => (m === 'none' ? 'ios' : m)), 1500)
+    }
+
+    function onInstalled() {
+      dismiss()
+    }
+    window.addEventListener('appinstalled', onInstalled)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall)
+      window.removeEventListener('appinstalled', onInstalled)
+      if (t) clearTimeout(t)
+    }
   }, [])
 
   function dismiss() {
-    setVisible(false)
+    setMode('none')
     try {
       window.localStorage.setItem(STORAGE_KEY, '1')
     } catch {
@@ -31,13 +66,21 @@ export function IosInstallPrompt() {
     }
   }
 
-  if (!visible) return null
+  async function installAndroid() {
+    if (!deferred) return
+    await deferred.prompt()
+    await deferred.userChoice
+    setDeferred(null)
+    dismiss()
+  }
+
+  if (mode === 'none') return null
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Installer GabonPrice sur l'écran d'accueil"
+      aria-label="Installer GabonPrice"
       onClick={dismiss}
       className="fixed inset-0 z-9999 flex items-end justify-center bg-ink/55"
     >
@@ -70,17 +113,31 @@ export function IosInstallPrompt() {
           Ajoutez l'app à votre écran d'accueil pour un accès rapide, même hors connexion.
         </p>
 
-        <div className="flex flex-col gap-3.5">
-          <Step num={1}>
-            Touchez le bouton <ShareIcon /> <b className="font-bold">Partager</b> en bas de Safari
-          </Step>
-          <Step num={2}>
-            Faites défiler et choisissez <Pill>Sur l'écran d'accueil</Pill>
-          </Step>
-          <Step num={3}>
-            Touchez <b className="font-bold">Ajouter</b> — c'est prêt&nbsp;! 🎉
-          </Step>
-        </div>
+        {mode === 'android' ? (
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={installAndroid}
+              className="w-full rounded-2xl bg-brand-green py-3.75 text-base font-extrabold text-white transition-colors hover:bg-[#0f5c38]"
+            >
+              Installer l'application
+            </button>
+            <button onClick={dismiss} className="w-full py-2 text-sm font-semibold text-muted">
+              Plus tard
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3.5">
+            <Step num={1}>
+              Touchez le bouton <ShareIcon /> <b className="font-bold">Partager</b> en bas de Safari
+            </Step>
+            <Step num={2}>
+              Faites défiler et choisissez <Pill>Sur l'écran d'accueil</Pill>
+            </Step>
+            <Step num={3}>
+              Touchez <b className="font-bold">Ajouter</b> — c'est prêt&nbsp;! 🎉
+            </Step>
+          </div>
+        )}
       </div>
     </div>
   )
