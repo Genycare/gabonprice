@@ -9,6 +9,7 @@ export const CATEGORY_EMOJI: Record<string, string> = {
   Dessert: '🍰',
   Boissons: '🥤',
   'Épicerie & Céréales': '🌾',
+  Conserves: '🥫',
   'Gaz & Énergie': '🔥',
   Construction: '🧱',
   Hygiène: '🧴',
