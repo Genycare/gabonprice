@@ -15,6 +15,7 @@ export const CATEGORY_EMOJI: Record<string, string> = {
   'Produits ménagers': '🧹',
   'Beauté & Cosmétique': '💄',
   Électronique: '📱',
+  Électroménager: '🔌',
   Pharmacie: '💊',
   'Bébé & Puériculture': '🍼',
   Vêtements: '👕',
