@@ -12,6 +12,7 @@ export const CATEGORY_EMOJI: Record<string, string> = {
   'Gaz & Énergie': '🔥',
   Construction: '🧱',
   Hygiène: '🧴',
+  'Produits ménagers': '🧹',
   'Beauté & Cosmétique': '💄',
   Électronique: '📱',
   Pharmacie: '💊',
