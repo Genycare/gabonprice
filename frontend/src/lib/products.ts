@@ -14,6 +14,18 @@ export interface ProductFilters {
   category?: string
 }
 
+// websearch_to_tsquery n'accepte que des mots complets : taper "sard" ne
+// trouve pas "Sardine" tant que le mot n'est pas fini. On construit plutôt
+// une requête à préfixe ("sard:*") pour que la recherche fonctionne au fur
+// et à mesure de la frappe, comme un utilisateur s'y attend.
+function buildPrefixTsQuery(text: string): string {
+  const tokens = text
+    .split(/\s+/)
+    .map((token) => token.replace(/[^\p{L}\p{N}]/gu, ''))
+    .filter(Boolean)
+  return tokens.map((token) => `${token}:*`).join(' & ')
+}
+
 export async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
   let productIds: string[] | null = null
 
@@ -30,7 +42,10 @@ export async function fetchProducts(filters: ProductFilters = {}): Promise<Produ
 
   let query = supabase.from('products').select('*').order('name')
   if (filters.search) {
-    query = query.textSearch('search_vector', filters.search, { type: 'websearch', config: 'french' })
+    const tsQuery = buildPrefixTsQuery(filters.search)
+    if (tsQuery) {
+      query = query.textSearch('search_vector', tsQuery, { config: 'french' })
+    }
   }
   if (filters.category) {
     query = query.eq('category', filters.category)

@@ -57,10 +57,10 @@ function Sparkline({ points }: { points: number[] }) {
   )
 }
 
-function ProductResultGroup({ product, city, showHeader }: { product: Product; city: string; showHeader: boolean }) {
+function ProductResultGroup({ product, showHeader }: { product: Product; showHeader: boolean }) {
   const { data: prices, isLoading } = useQuery({
-    queryKey: ['product-prices', product.id, city],
-    queryFn: () => fetchProductPrices(product.id, city || undefined),
+    queryKey: ['product-prices', product.id],
+    queryFn: () => fetchProductPrices(product.id),
   })
 
   const { data: history } = useQuery({
@@ -186,8 +186,8 @@ export function SearchPage() {
   }, [searchInput])
 
   const { data: onlineProducts, isLoading, isError } = useQuery({
-    queryKey: ['products', { search, city, category }],
-    queryFn: () => fetchProducts({ search: search || undefined, city: city || undefined, category: category || undefined }),
+    queryKey: ['products', { search, category }],
+    queryFn: () => fetchProducts({ search: search || undefined, category: category || undefined }),
     enabled: isOnline,
   })
 
@@ -204,6 +204,7 @@ export function SearchPage() {
     <div>
       <header className="sticky top-0 z-40 border-b border-line bg-white px-4.5 pb-3.5 pt-4">
         <h1 className="sr-only">Recherche</h1>
+        <div className="mx-auto max-w-2xl">
         <div className="mb-3 flex items-center gap-2.5">
           <button
             onClick={() => navigate(-1)}
@@ -302,15 +303,16 @@ export function SearchPage() {
             Hors ligne — recherche sur les produits déjà consultés, filtres indisponibles
           </p>
         )}
+        </div>
       </header>
 
-      <div className="pt-4">
+      <div className="mx-auto max-w-2xl pt-4">
         {isOnline && isLoading && <p className="px-4.5 text-center text-sm text-muted">Chargement...</p>}
         {isOnline && isError && <p className="px-4.5 text-center text-sm text-red-600">Erreur lors du chargement des produits.</p>}
         {products?.length === 0 && <p className="px-4.5 text-center text-sm text-muted">Aucun produit trouvé.</p>}
 
         {products?.map((product) => (
-          <ProductResultGroup key={product.id} product={product} city={isOnline ? city : ''} showHeader={(products?.length ?? 0) > 1} />
+          <ProductResultGroup key={product.id} product={product} showHeader={(products?.length ?? 0) > 1} />
         ))}
       </div>
 
