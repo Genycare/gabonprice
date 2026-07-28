@@ -340,6 +340,9 @@ export function AddPricePage() {
                 id="product-search"
                 type="text"
                 autoFocus
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={productQuery}
                 onChange={(e) => setProductQuery(e.target.value)}
                 placeholder="Rechercher un produit (ex : riz, gaz, ciment...)"
