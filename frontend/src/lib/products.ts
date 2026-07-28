@@ -56,15 +56,30 @@ export async function fetchProduct(productId: string): Promise<Product> {
   return data
 }
 
-export async function fetchProductPrices(productId: string): Promise<PriceWithContributor[]> {
-  const { data, error } = await supabase
+export async function fetchProductPrices(productId: string, city?: string): Promise<PriceWithContributor[]> {
+  let query = supabase
     .from('prices')
     .select('*, users(username, karma_score, level)')
     .eq('product_id', productId)
     .eq('status', 'active')
-    .order('amount', { ascending: true })
+  if (city) query = query.eq('city', city)
+  const { data, error } = await query.order('amount', { ascending: true })
   if (error) throw error
   return data as unknown as PriceWithContributor[]
+}
+
+export type PriceHistoryPoint = Tables<'price_history'>
+
+export async function fetchPriceHistory(productId: string, sinceDays = 7): Promise<PriceHistoryPoint[]> {
+  const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const { data, error } = await supabase
+    .from('price_history')
+    .select('*')
+    .eq('product_id', productId)
+    .gte('recorded_on', since)
+    .order('recorded_on', { ascending: true })
+  if (error) throw error
+  return data
 }
 
 export type UserPrice = Tables<'prices'> & {
