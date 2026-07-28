@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createPrice,
   createProduct,
@@ -10,6 +10,7 @@ import {
   updatePrice,
   type PriceType,
   type Product,
+  type UserPrice,
 } from '../lib/products'
 import { CATEGORY_EMOJI, categoryEmoji } from '../lib/categories'
 import { priceFormSchema } from '../lib/priceSchema'
@@ -19,6 +20,7 @@ import { compressImage, uploadPricePhoto } from '../lib/photo'
 import { useSession } from '../hooks/useSession'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { enqueuePrice } from '../lib/offlineQueue'
+import { fetchMyProfile } from '../lib/profile'
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
@@ -30,6 +32,7 @@ export function AddPricePage() {
   const navigate = useNavigate()
   const { session } = useSession()
   const isOnline = useOnlineStatus()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const editPriceId = searchParams.get('edit')
 
@@ -235,6 +238,17 @@ export function AddPricePage() {
         return
       }
 
+      // Snapshot du karma/niveau avant l'insertion, uniquement pour le chemin qui va
+      // réellement créer un nouveau prix en ligne (jamais l'édition) : sert à détecter
+      // un changement de niveau une fois le prix publié. Lancé ici pour se chevaucher
+      // avec l'upload de la photo ci-dessous plutôt que d'ajouter une latence sèche.
+      const cachedProfile = !editPriceId && session
+        ? queryClient.getQueryData<Awaited<ReturnType<typeof fetchMyProfile>>>(['my-profile'])
+        : undefined
+      const beforeProfilePromise = !editPriceId && session
+        ? (cachedProfile ? Promise.resolve(cachedProfile) : fetchMyProfile().catch(() => null))
+        : null
+
       let finalPhotoUrl = photoUrl
       if (photoFile && session) {
         setIsUploadingPhoto(true)
@@ -261,7 +275,33 @@ export function AddPricePage() {
         await updatePrice(editPriceId, payload)
         navigate(`/produit/${productId}`)
       } else if (session) {
+        const beforeProfile = await beforeProfilePromise
+        const beforeKarma = beforeProfile?.karma_score ?? null
+        const beforeLevel = beforeProfile?.level ?? null
+
         await createPrice(session.user.id, payload)
+
+        let karmaDelta = 10 // constante serveur connue pour un ajout de prix, utilisée seulement si la relecture ci-dessous échoue
+        let leveledUp = false
+        let newLevel: string | undefined
+        let afterKarma: number | undefined
+        let afterUsername: string | undefined
+        try {
+          const afterProfile = await fetchMyProfile()
+          queryClient.setQueryData(['my-profile'], afterProfile)
+          afterKarma = afterProfile.karma_score
+          afterUsername = afterProfile.username
+          newLevel = afterProfile.level
+          if (beforeKarma != null) karmaDelta = afterProfile.karma_score - beforeKarma
+          if (beforeLevel != null) leveledUp = afterProfile.level !== beforeLevel
+        } catch {
+          // relecture échouée : on garde les valeurs par défaut, jamais de fausse célébration
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['user-prices', session.user.id] })
+        const cachedPrices = queryClient.getQueryData<UserPrice[]>(['user-prices', session.user.id])
+        const priceCount = cachedPrices ? cachedPrices.length + 1 : undefined
+
         navigate('/confirmation', {
           state: {
             productId,
@@ -271,6 +311,12 @@ export function AddPricePage() {
             storeName: parsed.data.storeName,
             city: parsed.data.city,
             neighborhood: parsed.data.neighborhood,
+            karmaDelta,
+            leveledUp,
+            newLevel,
+            username: afterUsername,
+            karmaScore: afterKarma,
+            priceCount,
           },
         })
       }

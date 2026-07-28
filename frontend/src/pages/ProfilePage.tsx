@@ -1,18 +1,18 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { fetchMyProfile, signOut } from '../lib/profile'
 import { fetchUserPrices } from '../lib/products'
 import { useSession } from '../hooks/useSession'
 import { levelProgress } from '../lib/karma'
-
-function initials(username: string): string {
-  const clean = username.replace(/^user_/, '')
-  return clean.slice(0, 2).toUpperCase()
-}
+import { initials } from '../lib/format'
+import { BADGES, unlockedBadgeIds } from '../lib/badges'
+import { shareCard } from '../lib/shareCard'
 
 export function ProfilePage() {
   const { session } = useSession()
   const navigate = useNavigate()
+  const [whatsappFallbackUrl, setWhatsappFallbackUrl] = useState<string | null>(null)
 
   const { data: profile } = useQuery({
     queryKey: ['my-profile'],
@@ -31,10 +31,29 @@ export function ProfilePage() {
     navigate('/connexion', { replace: true })
   }
 
+  async function handleShare() {
+    if (!profile) return
+    setWhatsappFallbackUrl(null)
+    const result = await shareCard({
+      username: profile.username,
+      level: profile.level,
+      karma: profile.karma_score,
+      priceCount: prices?.length ?? 0,
+    })
+    if (result.status === 'fallback') setWhatsappFallbackUrl(result.whatsappUrl)
+  }
+
   if (!profile) return null
 
   const progress = levelProgress(profile.karma_score)
   const provinceCount = new Set(prices?.map((p) => p.province)).size
+  const categoryCount = new Set(prices?.map((p) => p.products?.category).filter(Boolean)).size
+  const unlocked = unlockedBadgeIds({
+    karma: profile.karma_score,
+    priceCount: prices?.length ?? 0,
+    provinceCount,
+    categoryCount,
+  })
 
   return (
     <div>
@@ -84,6 +103,47 @@ export function ProfilePage() {
           <div className="text-[13px] font-bold text-ink">🏆 Niveau maximum atteint</div>
         )}
       </div>
+
+      <div className="mx-4.5 mt-5 rounded-2xl border border-line bg-white p-4">
+        <div className="mb-3 text-[13px] font-bold text-ink">
+          🏅 Badges ({unlocked.size}/{BADGES.length})
+        </div>
+        <div className="grid grid-cols-4 gap-2.5">
+          {BADGES.map((badge) => {
+            const isUnlocked = unlocked.has(badge.id)
+            return (
+              <div key={badge.id} title={badge.description} className="flex flex-col items-center gap-1 text-center">
+                <div
+                  className={`flex h-12 w-12 items-center justify-center rounded-full border-[1.5px] text-xl ${
+                    isUnlocked ? 'border-brand-gold bg-brand-green-light' : 'border-line bg-app-bg grayscale opacity-40'
+                  }`}
+                >
+                  {badge.emoji}
+                </div>
+                <div className={`text-[10px] font-semibold leading-tight ${isUnlocked ? 'text-ink' : 'text-muted'}`}>{badge.label}</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleShare}
+        className="mx-4.5 mt-5 w-full rounded-2xl border-[1.5px] border-brand-green-vivid bg-brand-green-light py-3.5 text-sm font-extrabold text-brand-green"
+      >
+        📤 Partager ma carte GabonPrice
+      </button>
+      {whatsappFallbackUrl && (
+        <a
+          href={whatsappFallbackUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mx-4.5 mt-2.5 block rounded-2xl border-[1.5px] border-line bg-white py-3 text-center text-[13px] font-bold text-ink"
+        >
+          Image téléchargée — ouvrir WhatsApp
+        </a>
+      )}
 
       {profile.is_admin && (
         <Link

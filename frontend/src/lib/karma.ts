@@ -1,4 +1,4 @@
-const LEVELS = [
+export const LEVELS = [
   { label: 'Débutant', min: 0 },
   { label: 'Contributeur', min: 100 },
   { label: 'Confirmé', min: 500 },
