@@ -99,6 +99,29 @@ export function HomePage() {
       </section>
 
       <section className="px-4.5 pt-5.5">
+        <Link
+          to="/ajouter"
+          className="flex items-center gap-3 overflow-hidden rounded-card-lg bg-brand-green-light py-4 pl-4 pr-3 sm:gap-6 sm:px-6"
+        >
+          <div className="flex-1">
+            <h2 className="mb-1 text-[15px] font-extrabold text-brand-green sm:text-lg">Ajoutez un prix</h2>
+            <p className="text-[13px] leading-snug text-muted sm:text-sm">
+              Contribuez à une communauté et aidez des milliers de Gabonais
+            </p>
+          </div>
+          <img
+            src="/hero/add-price-illustration.jpg"
+            alt=""
+            className="h-16 w-16 flex-shrink-0 object-contain sm:h-24 sm:w-24"
+          />
+          <span className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-brand-green-vivid px-3.5 py-2.5 text-[13px] font-bold text-white sm:gap-1.5 sm:px-5 sm:text-sm">
+            <span aria-hidden>+</span> Ajouter
+            <span className="hidden sm:inline">&nbsp;un prix</span>
+          </span>
+        </Link>
+      </section>
+
+      <section className="px-4.5 pt-5.5">
         <div className="mb-3.5 flex items-center justify-between">
           <h2 className="flex items-center gap-1.5 text-[17px] font-extrabold text-ink">
             <span>🔥</span> Tendances du jour
