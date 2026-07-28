@@ -65,14 +65,36 @@ export function HomePage() {
             </svg>
           </button>
         </div>
-        <Link to="/recherche" className="flex items-center gap-2.5 rounded-2xl border border-line bg-app-bg px-3.5 py-3">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-5 w-5 flex-shrink-0 text-muted">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <span className="flex-1 text-[15px] text-[#9CA3AF]">Rechercher un produit, un magasin...</span>
-        </Link>
       </header>
+
+      <section className="px-4.5 pt-4">
+        <div
+          className="relative overflow-hidden rounded-card-lg bg-cover bg-[center_30%] px-4.5 pb-4.5 pt-6"
+          style={{ backgroundImage: "url('/hero/home-hero.jpg')" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/45" />
+          <div className="relative">
+            <h2 className="mb-1.5 text-[26px] font-extrabold leading-tight text-white">
+              Comparez les prix,
+              <br />
+              <span className="text-brand-green-vivid">économisez</span> chaque jour
+            </h2>
+            <p className="mb-4.5 text-sm text-white/85">Des prix justes, partout au Gabon</p>
+            <Link
+              to="/recherche"
+              className="flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-3 shadow-lg"
+            >
+              <span className="flex-1 text-[15px] text-[#9CA3AF]">Rechercher un produit, un magasin...</span>
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-brand-green-vivid text-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-4.5 w-4.5">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </span>
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <section className="px-4.5 pt-5.5">
         <div className="mb-3.5 flex items-center justify-between">
