@@ -88,13 +88,16 @@ function ProductResultGroup({ product, showHeader }: { product: Product; showHea
       {prices?.length === 0 && <p className="px-4.5 text-sm text-muted">Aucun prix relevé pour ce produit.</p>}
 
       {best && (
-        <div className="mx-4.5 mb-3.5 flex items-center justify-between gap-3 rounded-card-lg border border-[#FDE68A] bg-[#FFFBEB] p-4">
+        <div className="relative mx-4.5 mb-3.5 flex items-center justify-between gap-3 overflow-hidden rounded-card-lg border-2 border-brand-gold bg-[#FFFBEB] p-4 shadow-[0_6px_18px_rgba(217,119,6,0.16)]">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-gold to-brand-green-vivid" />
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
               {categoryEmoji(product.category)}
             </div>
             <div>
-              <div className="mb-0.5 text-xs font-semibold text-muted">Meilleur prix aujourd'hui</div>
+              <div className="mb-0.5 flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wide text-[#B45309]">
+                🏆 Meilleur prix aujourd'hui
+              </div>
               <div className="text-xl font-extrabold leading-none text-brand-green">
                 {formatFcfa(best.amount)} <small className="text-xs font-semibold text-muted">FCFA</small>
               </div>
@@ -138,7 +141,7 @@ function ProductResultGroup({ product, showHeader }: { product: Product; showHea
             <Link
               key={entry.id}
               to={`/produit/${product.id}`}
-              className="flex items-center gap-3 rounded-card border border-line bg-white p-3 shadow-sm"
+              className="flex items-center gap-3 rounded-card border border-line bg-white p-3"
             >
               <div
                 className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-base font-extrabold"

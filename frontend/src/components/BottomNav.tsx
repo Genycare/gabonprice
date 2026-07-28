@@ -70,7 +70,7 @@ function NavTab({ to, label, end }: { to: string; label: keyof typeof ICONS; end
 export function BottomNav() {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-10 flex items-center border-t border-line bg-white/95 backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-10 flex items-center border-t border-line bg-white"
       aria-label="Navigation principale"
     >
       {SIDE_ITEMS.map((item) => (
