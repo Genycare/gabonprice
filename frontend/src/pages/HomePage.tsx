@@ -69,17 +69,19 @@ export function HomePage() {
 
       <section className="px-4.5 pt-4">
         <div
-          className="relative mx-auto max-w-[480px] overflow-hidden rounded-card-lg bg-cover bg-[center_30%] px-4.5 pb-4.5 pt-6"
+          className="relative mx-auto aspect-[3/2] max-w-[480px] overflow-hidden rounded-card-lg bg-cover bg-center px-4.5 pb-4.5 pt-6"
           style={{ backgroundImage: "url('/hero/home-hero.jpg')" }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/45" />
-          <div className="relative">
-            <h2 className="mb-1.5 text-[26px] font-extrabold leading-tight text-white">
-              Comparez les prix,
-              <br />
-              <span className="text-brand-green-vivid">économisez</span> chaque jour
-            </h2>
-            <p className="mb-4.5 text-sm text-white/85">Des prix justes, partout au Gabon</p>
+          <div className="relative flex h-full flex-col justify-between">
+            <div>
+              <h2 className="mb-1.5 text-[26px] font-extrabold leading-tight text-white">
+                Comparez les prix,
+                <br />
+                <span className="text-brand-green-vivid">économisez</span> chaque jour
+              </h2>
+              <p className="text-sm text-white/85">Des prix justes, partout au Gabon</p>
+            </div>
             <Link
               to="/recherche"
               className="flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-3 shadow-lg"
