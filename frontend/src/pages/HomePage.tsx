@@ -69,7 +69,7 @@ export function HomePage() {
 
       <section className="px-4.5 pt-4">
         <div
-          className="relative overflow-hidden rounded-card-lg bg-cover bg-[center_30%] px-4.5 pb-4.5 pt-6"
+          className="relative mx-auto max-w-[480px] overflow-hidden rounded-card-lg bg-cover bg-[center_30%] px-4.5 pb-4.5 pt-6"
           style={{ backgroundImage: "url('/hero/home-hero.jpg')" }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/45" />
