@@ -8,6 +8,7 @@ import {
   fetchProduct,
   fetchProducts,
   updatePrice,
+  type PriceType,
   type Product,
 } from '../lib/products'
 import { CATEGORY_EMOJI, categoryEmoji } from '../lib/categories'
@@ -33,13 +34,17 @@ export function AddPricePage() {
   const editPriceId = searchParams.get('edit')
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  // Un produit "brouillon" (nom + catégorie choisis mais pas encore en base) tant que
+  // l'utilisateur n'a pas réellement publié un prix : créer le produit dès cette étape
+  // laissait un produit orphelin sans aucun prix si l'utilisateur abandonnait le
+  // formulaire en cours de route.
+  const [newProductDraft, setNewProductDraft] = useState<{ name: string; category: string } | null>(null)
   const [productQuery, setProductQuery] = useState('')
   const [showProductSearch, setShowProductSearch] = useState(!editPriceId)
   const [newProductCategory, setNewProductCategory] = useState('')
-  const [isCreatingProduct, setIsCreatingProduct] = useState(false)
-  const [createProductError, setCreateProductError] = useState<string | null>(null)
 
   const [amount, setAmount] = useState('')
+  const [priceType, setPriceType] = useState<PriceType>('detail')
   const [storeName, setStoreName] = useState('')
   const [province, setProvince] = useState('')
   const [city, setCity] = useState('')
@@ -68,6 +73,7 @@ export function AddPricePage() {
       const product = await fetchProduct(price.product_id)
       setSelectedProduct(product)
       setAmount(String(price.amount))
+      setPriceType(price.price_type === 'gros' ? 'gros' : 'detail')
       setStoreName(price.store_name)
       setProvince(price.province)
       setCity(price.city)
@@ -125,30 +131,28 @@ export function AddPricePage() {
     setPhotoUrl(null)
   }
 
-  async function handleCreateProduct() {
+  function handleSelectNewProduct() {
     const name = productQuery.trim()
     if (!name || !newProductCategory) return
-    setCreateProductError(null)
-    setIsCreatingProduct(true)
-    try {
-      const product = await createProduct(name, newProductCategory)
-      setSelectedProduct(product)
-      setShowProductSearch(false)
-      setProductQuery('')
-      setNewProductCategory('')
-    } catch {
-      setCreateProductError("Impossible de créer ce produit. Réessayez.")
-    } finally {
-      setIsCreatingProduct(false)
-    }
+    // Pas d'appel à createProduct ici : le produit n'est créé en base qu'à la
+    // publication effective du prix (voir handleSubmit), pour ne jamais laisser
+    // de produit sans prix si l'utilisateur quitte le formulaire avant la fin.
+    setNewProductDraft({ name, category: newProductCategory })
+    setShowProductSearch(false)
+    setProductQuery('')
+    setNewProductCategory('')
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitError(null)
 
+    // productId n'a pas besoin d'être un vrai identifiant à ce stade : un produit
+    // "brouillon" (newProductDraft) sans id existant reste valide pour la validation
+    // du formulaire, le vrai produit n'est créé qu'une fois toutes les autres
+    // vérifications passées, juste avant l'enregistrement du prix.
     const parsed = priceFormSchema.safeParse({
-      productId: selectedProduct?.id ?? '',
+      productId: selectedProduct?.id || (newProductDraft ? 'draft' : ''),
       amount,
       storeName,
       province,
@@ -169,10 +173,38 @@ export function AddPricePage() {
     setIsSubmitting(true)
 
     try {
+      let productId = selectedProduct?.id
+      let productName = selectedProduct?.name
+      let productCategory = selectedProduct?.category
+
+      if (!productId && newProductDraft) {
+        if (!isOnline) {
+          setSubmitError('Impossible de créer un nouveau produit hors connexion. Reconnectez-vous, ou choisissez un produit déjà existant.')
+          return
+        }
+        try {
+          const created = await createProduct(newProductDraft.name, newProductDraft.category)
+          productId = created.id
+          productName = created.name
+          productCategory = created.category
+          setSelectedProduct(created)
+          setNewProductDraft(null)
+        } catch {
+          setSubmitError("Impossible de créer ce produit. Réessayez.")
+          return
+        }
+      }
+
+      if (!productId || !productName || !productCategory) {
+        setSubmitError('Choisissez un produit.')
+        return
+      }
+
       if (!isOnline && !editPriceId && session) {
         const payload = {
-          product_id: parsed.data.productId,
+          product_id: productId,
           amount: parsed.data.amount,
+          price_type: priceType,
           store_name: parsed.data.storeName,
           province: parsed.data.province,
           city: parsed.data.city,
@@ -185,14 +217,14 @@ export function AddPricePage() {
         enqueuePrice({
           userId: session.user.id,
           price: payload,
-          productName: selectedProduct!.name,
-          productCategory: selectedProduct!.category,
+          productName,
+          productCategory,
         })
         navigate('/confirmation', {
           state: {
-            productId: parsed.data.productId,
-            productName: selectedProduct!.name,
-            productCategory: selectedProduct!.category,
+            productId,
+            productName,
+            productCategory,
             amount: parsed.data.amount,
             storeName: parsed.data.storeName,
             city: parsed.data.city,
@@ -212,8 +244,9 @@ export function AddPricePage() {
       }
 
       const payload = {
-        product_id: parsed.data.productId,
+        product_id: productId,
         amount: parsed.data.amount,
+        price_type: priceType,
         store_name: parsed.data.storeName,
         province: parsed.data.province,
         city: parsed.data.city,
@@ -226,14 +259,14 @@ export function AddPricePage() {
 
       if (editPriceId) {
         await updatePrice(editPriceId, payload)
-        navigate(`/produit/${parsed.data.productId}`)
+        navigate(`/produit/${productId}`)
       } else if (session) {
         await createPrice(session.user.id, payload)
         navigate('/confirmation', {
           state: {
-            productId: parsed.data.productId,
-            productName: selectedProduct!.name,
-            productCategory: selectedProduct!.category,
+            productId,
+            productName,
+            productCategory,
             amount: parsed.data.amount,
             storeName: parsed.data.storeName,
             city: parsed.data.city,
@@ -273,16 +306,31 @@ export function AddPricePage() {
             Produit <span className="text-brand-green-vivid">*</span>
           </label>
 
-          {selectedProduct && !showProductSearch ? (
+          {(selectedProduct || newProductDraft) && !showProductSearch ? (
             <div className="flex items-center gap-3.5 rounded-2xl border-[1.5px] border-line bg-white px-4 py-3">
               <div className="flex h-11.5 w-11.5 flex-shrink-0 items-center justify-center rounded-xl bg-brand-green-light text-2xl">
-                {categoryEmoji(selectedProduct.category)}
+                {categoryEmoji((selectedProduct ?? newProductDraft)!.category)}
               </div>
               <div className="flex-1">
-                <div className="text-[15px] font-bold text-ink">{selectedProduct.name}</div>
-                <div className="text-xs text-muted">{selectedProduct.category}</div>
+                <div className="text-[15px] font-bold text-ink">{(selectedProduct ?? newProductDraft)!.name}</div>
+                <div className="flex items-center gap-1.5 text-xs text-muted">
+                  {(selectedProduct ?? newProductDraft)!.category}
+                  {newProductDraft && !selectedProduct && (
+                    <span className="rounded-full bg-brand-green-light px-1.5 py-0.5 text-[10px] font-bold text-brand-green">
+                      Nouveau produit
+                    </span>
+                  )}
+                </div>
               </div>
-              <button type="button" onClick={() => setShowProductSearch(true)} className="min-h-11 text-xs font-bold text-brand-green-vivid">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedProduct(null)
+                  setNewProductDraft(null)
+                  setShowProductSearch(true)
+                }}
+                className="min-h-11 text-xs font-bold text-brand-green-vivid"
+              >
                 Changer
               </button>
             </div>
@@ -339,13 +387,12 @@ export function AddPricePage() {
                   </div>
                   <button
                     type="button"
-                    disabled={!newProductCategory || isCreatingProduct}
-                    onClick={handleCreateProduct}
+                    disabled={!newProductCategory}
+                    onClick={handleSelectNewProduct}
                     className="w-full rounded-xl bg-brand-green py-2.5 text-sm font-bold text-white disabled:opacity-50"
                   >
-                    {isCreatingProduct ? 'Création...' : `Créer « ${productQuery.trim()} » comme nouveau produit`}
+                    {`Utiliser « ${productQuery.trim()} » comme nouveau produit`}
                   </button>
-                  {createProductError && <p className="mt-2 text-xs text-red-600">{createProductError}</p>}
                 </div>
               )}
             </div>
@@ -370,6 +417,28 @@ export function AddPricePage() {
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[15px] font-bold text-muted">FCFA</span>
           </div>
           {errors.amount && <p className="mt-1.5 text-xs text-red-600">{errors.amount}</p>}
+
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setPriceType('detail')}
+              className={`min-h-11 rounded-xl border-[1.5px] text-sm font-bold ${
+                priceType === 'detail' ? 'border-brand-green-vivid bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
+              }`}
+            >
+              Prix au détail
+            </button>
+            <button
+              type="button"
+              onClick={() => setPriceType('gros')}
+              className={`min-h-11 rounded-xl border-[1.5px] text-sm font-bold ${
+                priceType === 'gros' ? 'border-brand-green-vivid bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
+              }`}
+            >
+              Prix de gros
+            </button>
+          </div>
+          <p className="mt-1.5 text-xs text-muted">Choisissez « Prix de gros » pour un achat en carton, lot ou grande quantité.</p>
         </div>
 
         <div>

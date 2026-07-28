@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchProducts, fetchProductPrices, fetchPriceHistory, type Product, type PriceWithContributor } from '../lib/products'
+import {
+  fetchProducts,
+  fetchProductPrices,
+  fetchPriceHistory,
+  type PriceType,
+  type Product,
+  type PriceWithContributor,
+} from '../lib/products'
 import { CATEGORY_EMOJI, categoryEmoji } from '../lib/categories'
 import { formatFcfa } from '../lib/format'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
@@ -57,15 +64,16 @@ function Sparkline({ points }: { points: number[] }) {
   )
 }
 
-function ProductResultGroup({ product, showHeader }: { product: Product; showHeader: boolean }) {
+function ProductResultGroup({ product, showHeader, priceType }: { product: Product; showHeader: boolean; priceType: PriceType }) {
   const { data: prices, isLoading } = useQuery({
-    queryKey: ['product-prices', product.id],
-    queryFn: () => fetchProductPrices(product.id),
+    queryKey: ['product-prices', product.id, priceType],
+    queryFn: () => fetchProductPrices(product.id, undefined, priceType),
   })
 
   const { data: history } = useQuery({
     queryKey: ['price-history', product.id],
     queryFn: () => fetchPriceHistory(product.id, 7),
+    enabled: priceType === 'detail',
   })
 
   const best = prices?.[0]
@@ -85,7 +93,11 @@ function ProductResultGroup({ product, showHeader }: { product: Product; showHea
       )}
 
       {isLoading && <p className="px-4.5 text-sm text-muted">Chargement...</p>}
-      {prices?.length === 0 && <p className="px-4.5 text-sm text-muted">Aucun prix relevé pour ce produit.</p>}
+      {prices?.length === 0 && (
+        <p className="px-4.5 text-sm text-muted">
+          {priceType === 'gros' ? 'Aucun prix de gros relevé pour ce produit.' : 'Aucun prix au détail relevé pour ce produit.'}
+        </p>
+      )}
 
       {best && (
         <div className="relative mx-4.5 mb-3.5 flex items-center justify-between gap-3 overflow-hidden rounded-card-lg border-2 border-brand-gold bg-[#FFFBEB] p-4 shadow-[0_6px_18px_rgba(217,119,6,0.16)]">
@@ -182,6 +194,7 @@ export function SearchPage() {
   const [search, setSearch] = useState('')
   const [city, setCity] = useSelectedCity()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [priceType, setPriceType] = useState<PriceType>('detail')
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 300)
@@ -301,7 +314,28 @@ export function SearchPage() {
               {city}
             </button>
           </div>
-        ) : (
+        ) : null}
+        {isOnline && (
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setPriceType('detail')}
+              className={`min-h-9 rounded-xl border-[1.5px] text-[13px] font-bold ${
+                priceType === 'detail' ? 'border-brand-green-vivid bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
+              }`}
+            >
+              Prix au détail
+            </button>
+            <button
+              onClick={() => setPriceType('gros')}
+              className={`min-h-9 rounded-xl border-[1.5px] text-[13px] font-bold ${
+                priceType === 'gros' ? 'border-brand-green-vivid bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
+              }`}
+            >
+              Prix de gros
+            </button>
+          </div>
+        )}
+        {!isOnline && (
           <p className="text-center text-xs font-semibold text-muted">
             Hors ligne — recherche sur les produits déjà consultés, filtres indisponibles
           </p>
@@ -315,7 +349,7 @@ export function SearchPage() {
         {products?.length === 0 && <p className="px-4.5 text-center text-sm text-muted">Aucun produit trouvé.</p>}
 
         {products?.map((product) => (
-          <ProductResultGroup key={product.id} product={product} showHeader={(products?.length ?? 0) > 1} />
+          <ProductResultGroup key={product.id} product={product} showHeader={(products?.length ?? 0) > 1} priceType={priceType} />
         ))}
       </div>
 

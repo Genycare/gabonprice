@@ -136,6 +136,7 @@ export type Database = {
           longitude: number | null
           neighborhood: string | null
           photo_url: string | null
+          price_type: string
           product_id: string
           province: string
           purchase_date: string
@@ -155,6 +156,7 @@ export type Database = {
           longitude?: number | null
           neighborhood?: string | null
           photo_url?: string | null
+          price_type?: string
           product_id: string
           province: string
           purchase_date: string
@@ -174,6 +176,7 @@ export type Database = {
           longitude?: number | null
           neighborhood?: string | null
           photo_url?: string | null
+          price_type?: string
           product_id?: string
           province?: string
           purchase_date?: string

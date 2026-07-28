@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchProduct, fetchProductPrices, type PriceWithContributor } from '../lib/products'
+import { fetchProduct, fetchProductPrices, type PriceType, type PriceWithContributor } from '../lib/products'
 import { fetchMyRatings, fetchMyReportedPriceIds, reportPrice, setPriceRating } from '../lib/ratings'
 import { categoryEmoji } from '../lib/categories'
 import { formatFcfa } from '../lib/format'
@@ -11,6 +11,13 @@ import { supabase } from '../lib/supabase'
 import { PhotoLightbox } from '../components/PhotoLightbox'
 
 const REPORT_REASONS = ['Prix incorrect', 'Information trompeuse ou obsolète', 'Doublon', 'Autre']
+
+function median(amounts: number[]): number | null {
+  if (amounts.length === 0) return null
+  const sorted = [...amounts].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+}
 
 function mapsUrl(entry: PriceWithContributor): string {
   if (entry.latitude != null && entry.longitude != null) {
@@ -207,6 +214,7 @@ export function ProductDetailPage() {
   const navigate = useNavigate()
   const [reportOpenId, setReportOpenId] = useState<string | null>(null)
   const [enlargedPhoto, setEnlargedPhoto] = useState<string | null>(null)
+  const [priceTypeFilter, setPriceTypeFilter] = useState<PriceType>('detail')
 
   const { data: product } = useQuery({
     queryKey: ['product', id],
@@ -259,7 +267,9 @@ export function ProductDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['my-reports', id, session.user.id] })
   }
 
-  const minPrice = prices && prices.length > 0 ? prices[0].amount : null
+  const filteredPrices = prices?.filter((p) => p.price_type === priceTypeFilter)
+  const minPrice = filteredPrices && filteredPrices.length > 0 ? filteredPrices[0].amount : null
+  const grosMedian = priceTypeFilter === 'gros' ? median(filteredPrices?.map((p) => p.amount) ?? []) : null
 
   if (!id) return null
 
@@ -288,15 +298,43 @@ export function ProductDetailPage() {
               <div className="mb-1 text-xs font-bold uppercase tracking-wide text-brand-green-vivid">{product.category}</div>
               <div className="mb-1.5 text-xl font-extrabold leading-tight text-ink">{product.name}</div>
               <div className="text-xs text-muted">
-                {prices?.length ?? 0} prix relevés · {new Set(prices?.map((p) => p.store_name)).size ?? 0} magasins
+                {filteredPrices?.length ?? 0} prix relevés · {new Set(filteredPrices?.map((p) => p.store_name)).size ?? 0} magasins
               </div>
             </div>
           </div>
+
+          <div className="mb-3.5 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setPriceTypeFilter('detail')}
+              className={`min-h-10 rounded-xl border-[1.5px] text-sm font-bold ${
+                priceTypeFilter === 'detail' ? 'border-brand-green-vivid bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
+              }`}
+            >
+              Prix au détail
+            </button>
+            <button
+              type="button"
+              onClick={() => setPriceTypeFilter('gros')}
+              className={`min-h-10 rounded-xl border-[1.5px] text-sm font-bold ${
+                priceTypeFilter === 'gros' ? 'border-brand-green-vivid bg-brand-green-light text-brand-green' : 'border-line bg-white text-ink'
+              }`}
+            >
+              Prix de gros
+            </button>
+          </div>
+
           <div className="flex gap-2.5">
             <div className="flex-1 rounded-2xl border border-line bg-app-bg p-3 text-center">
               <div className="mb-1 text-[11px] font-semibold text-muted">Prix médian</div>
               <div className="text-[17px] font-extrabold text-ink">
-                {product.median_price != null ? formatFcfa(product.median_price) : '—'}
+                {priceTypeFilter === 'detail'
+                  ? product.median_price != null
+                    ? formatFcfa(product.median_price)
+                    : '—'
+                  : grosMedian != null
+                    ? formatFcfa(grosMedian)
+                    : '—'}
                 <small className="text-[11px]"> F</small>
               </div>
             </div>
@@ -309,14 +347,20 @@ export function ProductDetailPage() {
             </div>
             <div className="flex-1 rounded-2xl border border-line bg-app-bg p-3 text-center">
               <div className="mb-1 text-[11px] font-semibold text-muted">Tendance 7j</div>
-              <div className="text-[17px] font-extrabold text-ink">
-                {product.price_trend_7d == null ? '—' : product.price_trend_7d <= 0 ? '▼' : '▲'}
-              </div>
-              {product.price_trend_7d != null && (
-                <div className={`mt-0.5 text-xs font-bold ${product.price_trend_7d <= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>
-                  {product.price_trend_7d > 0 ? '+' : ''}
-                  {product.price_trend_7d}%
-                </div>
+              {priceTypeFilter === 'gros' ? (
+                <div className="text-[17px] font-extrabold text-ink">—</div>
+              ) : (
+                <>
+                  <div className="text-[17px] font-extrabold text-ink">
+                    {product.price_trend_7d == null ? '—' : product.price_trend_7d <= 0 ? '▼' : '▲'}
+                  </div>
+                  {product.price_trend_7d != null && (
+                    <div className={`mt-0.5 text-xs font-bold ${product.price_trend_7d <= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>
+                      {product.price_trend_7d > 0 ? '+' : ''}
+                      {product.price_trend_7d}%
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -329,8 +373,12 @@ export function ProductDetailPage() {
 
       <div className="flex flex-col gap-3 px-4.5 pb-6">
         {isLoading && <p className="text-center text-sm text-muted">Chargement...</p>}
-        {prices?.length === 0 && <p className="text-center text-sm text-muted">Aucun prix relevé pour ce produit.</p>}
-        {prices?.map((entry, i) => (
+        {filteredPrices?.length === 0 && (
+          <p className="text-center text-sm text-muted">
+            {priceTypeFilter === 'gros' ? 'Aucun prix de gros relevé pour ce produit.' : 'Aucun prix au détail relevé pour ce produit.'}
+          </p>
+        )}
+        {filteredPrices?.map((entry, i) => (
           <PriceCard
             key={entry.id}
             entry={entry}

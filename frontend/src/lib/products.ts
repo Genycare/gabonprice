@@ -3,6 +3,8 @@ import type { Tables } from '../types/supabase'
 
 export type Product = Tables<'products'>
 
+export type PriceType = 'detail' | 'gros'
+
 export type PriceWithContributor = Tables<'prices'> & {
   users: Pick<Tables<'users'>, 'username' | 'karma_score' | 'level'> | null
 }
@@ -71,13 +73,14 @@ export async function fetchProduct(productId: string): Promise<Product> {
   return data
 }
 
-export async function fetchProductPrices(productId: string, city?: string): Promise<PriceWithContributor[]> {
+export async function fetchProductPrices(productId: string, city?: string, priceType?: PriceType): Promise<PriceWithContributor[]> {
   let query = supabase
     .from('prices')
     .select('*, users(username, karma_score, level)')
     .eq('product_id', productId)
     .eq('status', 'active')
   if (city) query = query.eq('city', city)
+  if (priceType) query = query.eq('price_type', priceType)
   const { data, error } = await query.order('amount', { ascending: true })
   if (error) throw error
   return data as unknown as PriceWithContributor[]
@@ -129,6 +132,7 @@ export type NewPrice = Pick<
   | 'latitude'
   | 'longitude'
   | 'photo_url'
+  | 'price_type'
 >
 
 export async function createPrice(userId: string, price: NewPrice) {
